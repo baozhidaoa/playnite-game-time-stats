@@ -3,10 +3,16 @@ var UI = (function () {
     document.getElementById("cardHours").textContent = formatHours(
       summary.TotalPlayTimeHours,
     );
-    document.getElementById("cardGames").textContent =
-      summary.TotalGamesPlayed + " 款";
-    document.getElementById("cardStreak").textContent =
-      summary.CurrentStreakDays + " 天";
+    document.getElementById("cardGames").textContent = I18n.format(
+      "gamesCount",
+      "{0} games",
+      summary.TotalGamesPlayed,
+    );
+    document.getElementById("cardStreak").textContent = I18n.format(
+      "daysCount",
+      "{0} days",
+      summary.CurrentStreakDays,
+    );
     document.getElementById("cardAvg").textContent = formatMinutes(
       summary.AverageDailyMinutes,
     );
@@ -18,7 +24,7 @@ var UI = (function () {
 
   function updateHourlyHint(text) {
     var hint = document.getElementById("hourlyFilterHint");
-    if (hint) hint.textContent = text || "每小时日均分钟";
+    if (hint) hint.textContent = text || I18n.t("hourlyDefaultHint");
   }
 
   function updateGameGrid(containerId, games) {
@@ -26,7 +32,9 @@ var UI = (function () {
     if (!container) return;
     if (!games || !games.length) {
       container.innerHTML =
-        '<div class="empty-hint">暂无数据，快去玩游戏吧</div>';
+        '<div class="empty-hint">' +
+        escapeHtml(I18n.t("emptyGameHint")) +
+        "</div>";
       return;
     }
     container.innerHTML = games
@@ -118,32 +126,40 @@ var UI = (function () {
 
   function renderBadge(g) {
     if (!g) return "";
-    var raw = g.DataSource || (g.IsEstimated ? "估算" : "");
+    var raw = g.DataSource || (g.IsEstimated ? I18n.t("estimatedData") : "");
     if (!raw) return "";
-    // Map "会话" to "Playnite" for consistency
-    var text = raw === "会话" || raw === "会话+估算" ? "Playnite" : raw;
     var title = g.EstimateReason || raw;
     return (
       '<span class="game-badge" title="' +
       escapeHtml(title) +
       '">' +
-      escapeHtml(text) +
+      escapeHtml(raw) +
       "</span>"
     );
   }
 
   function formatSessionText(g) {
     if (!g || !g.SessionCount) {
-      return g && g.DataSource ? g.DataSource : "估算数据";
+      return g && g.DataSource ? g.DataSource : I18n.t("estimatedData");
     }
-    return g.SessionCount + "次游玩";
+    return I18n.format("playsCount", "{0} plays", g.SessionCount);
   }
 
   function formatCardMeta(g) {
     var playText = formatMinutesAsHours(g && g.MinutesPlayed);
-    var countText = (g && g.SessionCount ? g.SessionCount : 0) + "次";
+    var countText = I18n.format(
+      "playsCountShort",
+      "{0} plays",
+      g && g.SessionCount ? g.SessionCount : 0,
+    );
     if (g && g.UserScore)
-      return "评分：" + g.UserScore + " / " + playText + " / " + countText;
+      return I18n.format(
+        "scoreMeta",
+        "Score: {0} / {1} / {2}",
+        g.UserScore,
+        playText,
+        countText,
+      );
     return playText + " / " + countText;
   }
 
@@ -168,11 +184,14 @@ var UI = (function () {
     });
     if (hasEstimated || hasSteamDelta || hasRecovered) {
       var parts = [];
-      if (hasSteamDelta) parts.push("Steam 差量");
-      if (hasRecovered) parts.push("恢复会话");
-      if (hasEstimated) parts.push("历史估算");
-      banner.textContent =
-        "包含" + parts.join("、") + "数据，悬停图表可查看来源构成";
+      if (hasSteamDelta) parts.push(I18n.t("legacySteamDelta"));
+      if (hasRecovered) parts.push(I18n.t("legacyRecovered"));
+      if (hasEstimated) parts.push(I18n.t("legacyEstimated"));
+      banner.textContent = I18n.format(
+        "legacyBanner",
+        "Includes {0} data. Hover charts to view source breakdown.",
+        parts.join(I18n.t("legacyJoin", ", ")),
+      );
       banner.style.display = "block";
     } else {
       banner.style.display = "none";
@@ -197,27 +216,29 @@ var UI = (function () {
   }
 
   function formatHours(h) {
-    if (h === undefined || h === null) return "0h";
-    if (h < 1) return Math.round(h * 60) + "m";
-    return h.toFixed(1) + "h";
+    if (h === undefined || h === null) return "0" + I18n.t("unitHourShort");
+    if (h < 1) return Math.round(h * 60) + I18n.t("unitMinuteShort");
+    return h.toFixed(1) + I18n.t("unitHourShort");
   }
 
   function formatMinutes(m) {
-    if (!m || m <= 0) return "0m";
-    if (m < 60) return Math.round(m) + "m";
+    if (!m || m <= 0) return "0" + I18n.t("unitMinuteShort");
+    if (m < 60) return Math.round(m) + I18n.t("unitMinuteShort");
     var h = Math.floor(m / 60);
     var r = Math.round(m % 60);
-    return r === 0 ? h + "h" : h + "h" + r + "m";
+    return r === 0
+      ? h + I18n.t("unitHourShort")
+      : h + I18n.t("unitHourShort") + r + I18n.t("unitMinuteShort");
   }
 
   function formatMinutesAsHours(m) {
-    if (!m || m <= 0) return "0.0h";
-    return (m / 60).toFixed(1) + "h";
+    if (!m || m <= 0) return "0.0" + I18n.t("unitHourShort");
+    return (m / 60).toFixed(1) + I18n.t("unitHourShort");
   }
 
   function escapeHtml(str) {
     var div = document.createElement("div");
-    div.appendChild(document.createTextNode(str));
+    div.appendChild(document.createTextNode(str || ""));
     return div.innerHTML;
   }
 

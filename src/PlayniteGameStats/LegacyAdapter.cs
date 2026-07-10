@@ -31,7 +31,7 @@ public class LegacyAdapter
 						TotalMinutes = totalMinutes,
 						SessionCount = 1,
 						IsEstimated = true,
-						Source = "Steam近两周估算"
+						Source = PluginLocalization.Get("DataSourceSteamRecentEstimate", "Steam recent estimate")
 					});
 				}
 				return list.Where((DailyStat s) => s.TotalMinutes > 0.0).ToList();
@@ -44,7 +44,7 @@ public class LegacyAdapter
 					TotalMinutes = Math.Round(Math.Min(steamStats.PlaytimeMinutes, 60.0), 1),
 					SessionCount = 1,
 					IsEstimated = true,
-					Source = "Steam最后游玩估算"
+					Source = PluginLocalization.Get("DataSourceSteamLastPlayedEstimate", "Steam last-played estimate")
 				});
 				return list;
 			}
@@ -61,7 +61,7 @@ public class LegacyAdapter
 			TotalMinutes = Math.Round(Math.Min(val, 60.0), 1),
 			SessionCount = 1,
 			IsEstimated = true,
-			Source = "Playnite最后游玩估算"
+			Source = PluginLocalization.Get("DataSourcePlayniteLastPlayedEstimate", "Playnite last-played estimate")
 		});
 		return list;
 	}

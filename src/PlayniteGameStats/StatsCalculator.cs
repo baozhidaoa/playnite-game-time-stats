@@ -391,7 +391,7 @@ public class StatsCalculator
 			}
 			foreach (Guid genreId in game.GenreIds)
 			{
-				string text = (genreNames.ContainsKey(genreId) ? genreNames[genreId] : "其他");
+				string text = (genreNames.ContainsKey(genreId) ? genreNames[genreId] : PluginLocalization.Get("DataSourceOther", "Other"));
 				if (!dictionary.TryGetValue(text, out GenreStat value))
 				{
 					value = new GenreStat
@@ -667,17 +667,17 @@ public class StatsCalculator
 		}
 		if (recoveredMinutes > 0.0)
 		{
-			list.Add("恢复");
+			list.Add(PluginLocalization.Get("DataSourceRecovered", "Recovered"));
 		}
 		if (steamDeltaMinutes > 0.0)
 		{
-			list.Add("Steam差量");
+			list.Add(PluginLocalization.Get("DataSourceSteamDelta", "Steam delta"));
 		}
 		if (estimatedMinutes > 0.0)
 		{
-			list.Add("历史估算");
+			list.Add(PluginLocalization.Get("DataSourceHistoryEstimate", "Historical estimate"));
 		}
-		return list.Count > 0 ? string.Join("+", list) : "未知";
+		return list.Count > 0 ? string.Join("+", list) : PluginLocalization.Get("DataSourceUnknown", "Unknown");
 	}
 
 	private static string BuildGameSourceReason(double exactMinutes, double recoveredMinutes, double steamDeltaMinutes, double estimatedMinutes)
@@ -689,9 +689,9 @@ public class StatsCalculator
 	{
 		List<string> list = new List<string>();
 		AddSourcePart(list, "Playnite", exactMinutes);
-		AddSourcePart(list, "恢复", recoveredMinutes);
-		AddSourcePart(list, "Steam差量", steamDeltaMinutes);
-		AddSourcePart(list, "估算", estimatedMinutes);
+		AddSourcePart(list, PluginLocalization.Get("DataSourceRecovered", "Recovered"), recoveredMinutes);
+		AddSourcePart(list, PluginLocalization.Get("DataSourceSteamDelta", "Steam delta"), steamDeltaMinutes);
+		AddSourcePart(list, PluginLocalization.Get("DataSourceEstimate", "Estimate"), estimatedMinutes);
 		return list.Count > 0 ? string.Join(" / ", list) : "";
 	}
 

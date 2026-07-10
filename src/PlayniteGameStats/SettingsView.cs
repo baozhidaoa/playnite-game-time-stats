@@ -16,7 +16,7 @@ public class SettingsView : UserControl
 		};
 		stackPanel.Children.Add(new TextBlock
 		{
-			Text = "Steam 数据",
+			Text = PluginLocalization.Get("SettingsSteamData", "Steam data"),
 			FontWeight = FontWeights.Bold,
 			Margin = new Thickness(0.0, 0.0, 0.0, 8.0)
 		});
@@ -28,7 +28,7 @@ public class SettingsView : UserControl
 		});
 		CheckBox checkBox = new CheckBox
 		{
-			Content = "启用在线 Steam 同步（留空时优先读取 Playnite/Steam 已有配置）",
+			Content = PluginLocalization.Get("SettingsEnableOnlineSteamSync", "Enable online Steam sync (when left blank, existing Playnite/Steam configuration is used first)"),
 			Margin = new Thickness(0.0, 0.0, 0.0, 10.0)
 		};
 		checkBox.SetBinding(ToggleButton.IsCheckedProperty, new Binding("EnableOnlineSteamSync")
@@ -38,7 +38,7 @@ public class SettingsView : UserControl
 		stackPanel.Children.Add(checkBox);
 		stackPanel.Children.Add(new TextBlock
 		{
-			Text = "Steam API Key",
+			Text = PluginLocalization.Get("SettingsSteamApiKey", "Steam API Key"),
 			Margin = new Thickness(0.0, 0.0, 0.0, 4.0)
 		});
 		TextBox textBox = new TextBox
@@ -53,7 +53,7 @@ public class SettingsView : UserControl
 		stackPanel.Children.Add(textBox);
 		stackPanel.Children.Add(new TextBlock
 		{
-			Text = "SteamId64（留空时自动从本机 Steam userdata 推断）",
+			Text = PluginLocalization.Get("SettingsSteamId64", "SteamId64 (leave blank to infer from local Steam userdata)"),
 			Margin = new Thickness(0.0, 0.0, 0.0, 4.0)
 		});
 		TextBox textBox2 = new TextBox
@@ -68,7 +68,7 @@ public class SettingsView : UserControl
 		stackPanel.Children.Add(textBox2);
 		stackPanel.Children.Add(new TextBlock
 		{
-			Text = "优先级：本插件填写的值 > Playnite 扩展配置中的明文 Steam API/SteamId > 本机 Steam userdata 推断 SteamId64。Playnite Steam 集成页的 API Key 存在加密令牌中，插件无法通过公共 SDK 直接读取；无 API Key 时仍会读取本机 Steam localconfig.vdf。",
+			Text = PluginLocalization.Get("SettingsPriorityNote", "Priority: values entered in this plugin > plaintext Steam API/SteamId from Playnite extension configuration > SteamId64 inferred from local Steam userdata. The API Key from Playnite's Steam integration page is stored in an encrypted token and is not exposed through the public SDK; without an API Key, the plugin will still read local Steam localconfig.vdf."),
 			TextWrapping = TextWrapping.Wrap
 		});
 		base.Content = stackPanel;

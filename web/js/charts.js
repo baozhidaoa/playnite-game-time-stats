@@ -18,11 +18,13 @@ var Charts = (function () {
   }
 
   function formatM(v) {
-    if (!v || v <= 0) return '0m';
-    if (v < 60) return Math.round(v) + 'm';
+    if (!v || v <= 0) return '0' + I18n.t('unitMinuteShort', 'm');
+    if (v < 60) return Math.round(v) + I18n.t('unitMinuteShort', 'm');
     var h = Math.floor(v / 60);
     var m = Math.round(v % 60);
-    return m === 0 ? h + 'h' : h + 'h' + m + 'm';
+    return m === 0
+      ? h + I18n.t('unitHourShort', 'h')
+      : h + I18n.t('unitHourShort', 'h') + m + I18n.t('unitMinuteShort', 'm');
   }
 
   function escapeHtml(value) {
@@ -126,11 +128,11 @@ var Charts = (function () {
         yearLabel: { show: false },
         dayLabel: {
           firstDay: 1,
-          nameMap: ['一', '二', '三', '四', '五', '六', '日'],
+          nameMap: I18n.list('dayNames', ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']),
           color: '#777', fontSize: 10, margin: 8
         },
         monthLabel: {
-          nameMap: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
+          nameMap: I18n.list('monthNamesShort', ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']),
           color: '#888', fontSize: 11, margin: 10
         },
         splitLine: {
@@ -238,7 +240,7 @@ var Charts = (function () {
       },
       yAxis: {
         type: 'value', name: '',
-        axisLabel: { color: '#888', fontSize: 10, formatter: function (v) { return (v / 60).toFixed(1) + 'h'; } },
+        axisLabel: { color: '#888', fontSize: 10, formatter: function (v) { return (v / 60).toFixed(1) + I18n.t('unitHourShort', 'h'); } },
         splitLine: { lineStyle: { color: 'rgba(255,255,255,0.04)', type: 'dashed' } },
         axisLine: { show: false }
       },
@@ -303,7 +305,7 @@ var Charts = (function () {
       },
       yAxis: {
         type: 'value', name: '',
-        axisLabel: { color: '#888', fontSize: 10, formatter: function (v) { return (v / 60).toFixed(1) + 'h'; } },
+        axisLabel: { color: '#888', fontSize: 10, formatter: function (v) { return (v / 60).toFixed(1) + I18n.t('unitHourShort', 'h'); } },
         splitLine: { lineStyle: { color: 'rgba(255,255,255,0.04)', type: 'dashed' } },
         axisLine: { show: false }
       },
@@ -336,7 +338,7 @@ var Charts = (function () {
   // ── Hourly Distribution ──
   function createHourlyOption(hourlyStats) {
     if (!hourlyStats || !hourlyStats.length) return emptyChart();
-    var hours = ['0时','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23'];
+    var hours = I18n.list('hourLabels', ['0:00','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23']);
     var values = hourlyStats.map(function (h) { return h.TotalMinutes; });
     var gameNames = hourlyStats.map(function (h) { return h.GameNames || []; });
 
@@ -347,7 +349,7 @@ var Charts = (function () {
         axisPointer: { type: 'line', lineStyle: { color: 'rgba(155,233,168,0.35)', width: 1 } },
         formatter: function (p) {
           var idx = p[0].dataIndex;
-          return '<b>' + hours[idx] + '</b><br/>日均 ' + formatM(p[0].value) + gameNamesLine(gameNames[idx]);
+          return '<b>' + hours[idx] + '</b><br/>' + I18n.t('daily', 'Daily') + ' ' + formatM(p[0].value) + gameNamesLine(gameNames[idx]);
         }
       }),
       xAxis: {
@@ -366,7 +368,7 @@ var Charts = (function () {
         axisLine: { show: false }
       },
       series: [{
-        name: '日均分钟',
+        name: I18n.t('dailyMinutes', 'Daily minutes'),
         type: 'line',
         data: values,
         smooth: 0.4,
@@ -411,7 +413,7 @@ var Charts = (function () {
     return {
       tooltip: extend(tooltip(), {
         formatter: function (p) {
-          return '<b>' + p.name + '</b><br/>' + p.value.toFixed(1) + ' 小时';
+          return '<b>' + p.name + '</b><br/>' + p.value.toFixed(1) + ' ' + I18n.t('hoursSuffix', 'hours');
         }
       }),
       radar: {
@@ -433,7 +435,7 @@ var Charts = (function () {
         type: 'radar',
         data: [{
           value: values,
-          name: title || '时长(小时)',
+          name: title || I18n.t('hoursSeries', 'Playtime (hours)'),
           areaStyle: { color: 'rgba(64,196,99,0.12)' },
           lineStyle: { color: GREEN, width: 2, shadowBlur: 8, shadowColor: 'rgba(64,196,99,0.3)' },
           itemStyle: { color: GREEN, borderColor: 'rgba(0,0,0,0.5)', borderWidth: 2 },
@@ -447,7 +449,7 @@ var Charts = (function () {
 
   function emptyChart() {
     return {
-      title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#555', fontSize: 13, fontWeight: 'normal' } }
+      title: { text: I18n.t('noData', 'No data'), left: 'center', top: 'center', textStyle: { color: '#555', fontSize: 13, fontWeight: 'normal' } }
     };
   }
 

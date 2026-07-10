@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,15 +9,15 @@
     />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <title>游戏时间统计</title>
+    <title data-i18n="appTitle">Game Time Statistics</title>
     <link rel="stylesheet" href="css/stats.css" />
   </head>
   <body>
     <div class="app-container">
       <div class="app-header">
-        <span class="app-title">游戏时间统计</span>
-        <span class="app-subtitle">了解你的游戏习惯</span>
-        <button class="refresh-btn" id="refreshBtn" title="刷新数据">
+        <span class="app-title" data-i18n="appTitle">Game Time Statistics</span>
+        <span class="app-subtitle" data-i18n="appSubtitle">Understand your play habits</span>
+        <button class="refresh-btn" id="refreshBtn" title="Refresh data" data-i18n-title="refreshData">
           <svg
             width="16"
             height="16"
@@ -53,7 +53,7 @@
             </svg>
           </div>
           <div class="card-body">
-            <div class="card-label">总游戏时长</div>
+            <div class="card-label" data-i18n="totalPlaytime">Total playtime</div>
             <div class="card-value" id="cardHours">0h</div>
           </div>
         </div>
@@ -73,7 +73,7 @@
             </svg>
           </div>
           <div class="card-body">
-            <div class="card-label">游玩游戏</div>
+            <div class="card-label" data-i18n="gamesPlayed">Games played</div>
             <div class="card-value" id="cardGames">0</div>
           </div>
         </div>
@@ -94,8 +94,8 @@
             </svg>
           </div>
           <div class="card-body">
-            <div class="card-label">连续游玩</div>
-            <div class="card-value" id="cardStreak">0 天</div>
+            <div class="card-label" data-i18n="currentStreak">Current streak</div>
+            <div class="card-value" id="cardStreak">0 days</div>
           </div>
         </div>
         <div class="summary-card">
@@ -112,7 +112,7 @@
             </svg>
           </div>
           <div class="card-body">
-            <div class="card-label">日均时长</div>
+            <div class="card-label" data-i18n="dailyAverage">Daily average</div>
             <div class="card-value" id="cardAvg">0m</div>
           </div>
         </div>
@@ -120,26 +120,26 @@
       <div class="control-bar">
         <div class="period-tabs">
           <button class="period-arrow" id="navPrev">&#8249;</button>
-          <button class="period-tab active" data-period="week">周</button>
-          <button class="period-tab" data-period="month">月</button>
-          <button class="period-tab" data-period="year">年</button>
-          <button class="period-tab" data-period="total">总计</button>
+          <button class="period-tab active" data-period="week" data-i18n="week">Week</button>
+          <button class="period-tab" data-period="month" data-i18n="month">Month</button>
+          <button class="period-tab" data-period="year" data-i18n="year">Year</button>
+          <button class="period-tab" data-period="total" data-i18n="total">Total</button>
           <button class="period-arrow" id="navNext">&#8250;</button>
-          <span class="period-label" id="periodLabel">本周</span>
+          <span class="period-label" id="periodLabel">This week</span>
         </div>
         <div class="chart-toggle-right">
           <div class="chart-type-btns">
             <button class="chart-btn active" data-chart="heatmap">
-              热力图
+              <span data-i18n="heatmap">Heatmap</span>
             </button>
-            <button class="chart-btn" data-chart="bar">柱状图</button>
-            <button class="chart-btn" data-chart="line">折线图</button>
+            <button class="chart-btn" data-chart="bar" data-i18n="barChart">Bar</button>
+            <button class="chart-btn" data-chart="line" data-i18n="lineChart">Line</button>
           </div>
         </div>
       </div>
       <div class="chart-card">
         <div class="chart-title-row">
-          <span class="section-label">游玩趋势</span>
+          <span class="section-label" data-i18n="playTrend">Play trend</span>
           <div class="chart-legend" id="chartLegend">
             <span class="legend-item"
               ><i style="background: #2d2d2d"></i>0</span
@@ -163,46 +163,47 @@
       <div class="analysis-row">
         <div class="chart-card half">
           <div class="chart-title-row">
-            <span class="section-label">时段分布</span>
-            <span class="section-hint" id="hourlyFilterHint">每小时日均分钟</span>
+            <span class="section-label" data-i18n="hourlyDistribution">Hourly distribution</span>
+            <span class="section-hint" id="hourlyFilterHint" data-i18n="hourlyDefaultHint">Average minutes per hour</span>
           </div>
           <div id="hourlyChart"></div>
         </div>
         <div class="chart-card half">
           <div class="chart-title-row">
-            <span class="section-label">类型偏好</span>
-            <span class="section-hint" id="genreFilterHint">全部时间</span>
+            <span class="section-label" data-i18n="genrePreference">Genre preference</span>
+            <span class="section-hint" id="genreFilterHint" data-i18n="allTime">All time</span>
           </div>
           <div id="genreChart"></div>
         </div>
       </div>
       <div class="game-section">
-        <div class="section-label">近期游玩</div>
+        <div class="section-label" data-i18n="recentGames">Recently played</div>
         <div class="game-grid" id="gameGrid">
-          <div class="empty-hint">暂无数据，快去玩游戏吧</div>
+          <div class="empty-hint" data-i18n="emptyGameHint">No data yet. Go play something.</div>
         </div>
       </div>
       <div class="bottom-panels">
         <div class="game-section half">
-          <div class="section-label">总时长排行</div>
+          <div class="section-label" data-i18n="topPlaytime">Top playtime</div>
           <div class="game-grid" id="topGameList">
             <div class="empty-hint">--</div>
           </div>
         </div>
         <div class="game-section half">
-          <div class="section-label">最喜爱的游戏</div>
+          <div class="section-label" data-i18n="favoriteGames">Favorite games</div>
           <div class="game-grid" id="recentGameList">
             <div class="empty-hint">--</div>
           </div>
         </div>
       </div>
       <div class="legacy-banner" id="legacyBanner" style="display: none">
-        部分数据来自累积时长估算，新会话将提供更精确的统计
+        <span data-i18n="legacyNotice">Some data comes from cumulative playtime estimates. New sessions will provide more accurate stats.</span>
       </div>
     </div>
 
     <script src="data.js"></script>
     <script src="js/vendor/echarts.min.js"></script>
+    <script src="js/i18n.js"></script>
     <script src="js/charts.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/app.js"></script>

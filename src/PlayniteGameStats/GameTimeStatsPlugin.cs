@@ -59,7 +59,7 @@ public class GameTimeStatsPlugin : GenericPlugin
 	{
 		string text = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "icon.png");
 		TopPanelItem topPanelItem = new TopPanelItem();
-		topPanelItem.Title = "游戏统计";
+		topPanelItem.Title = PluginLocalization.Get("TopPanelTitle", "Game stats");
 		topPanelItem.Icon = (File.Exists(text) ? text : null);
 		topPanelItem.Activated = delegate
 		{

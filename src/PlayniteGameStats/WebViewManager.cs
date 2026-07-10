@@ -48,7 +48,7 @@ public class WebViewManager : IDisposable
 			_webView = _api.WebViews.CreateView(1100, 750, Color.FromRgb(28, 28, 30));
 			if (_webView.WindowHost != null)
 			{
-				_webView.WindowHost.Title = "Game Time Statistics";
+				_webView.WindowHost.Title = PluginLocalization.Get("WindowTitle", "Game Time Statistics");
 				_webView.WindowHost.Closed += delegate
 				{
 					_isOpen = false;
@@ -69,7 +69,7 @@ public class WebViewManager : IDisposable
 		{
 			_isOpen = false;
 			_webView = null;
-			_api.Notifications.Add("stats-open-error", "Failed to open game time statistics: " + ex.Message, NotificationType.Error);
+			_api.Notifications.Add("stats-open-error", PluginLocalization.Format("OpenError", "Failed to open game time statistics: {0}", ex.Message), NotificationType.Error);
 		}
 	}
 
@@ -94,12 +94,17 @@ public class WebViewManager : IDisposable
 				NullValueHandling = NullValueHandling.Ignore,
 				Formatting = Formatting.None
 			});
-			string script = "window.__STATS_DATA__ = " + json + "; if(window.GameStats)window.GameStats.loadData(window.__STATS_DATA__);";
+			string l10n = JsonConvert.SerializeObject(PluginLocalization.GetWebStrings(), new JsonSerializerSettings
+			{
+				NullValueHandling = NullValueHandling.Ignore,
+				Formatting = Formatting.None
+			});
+			string script = "window.__GTS_I18N__ = " + l10n + "; if(window.I18n)window.I18n.set(window.__GTS_I18N__); window.__STATS_DATA__ = " + json + "; if(window.GameStats)window.GameStats.loadData(window.__STATS_DATA__);";
 			_webView.EvaluateScriptAsync(script);
 		}
 		catch (Exception ex)
 		{
-			_api.Notifications.Add("stats-push-error", "Failed to push stats: " + ex.Message, NotificationType.Error);
+			_api.Notifications.Add("stats-push-error", PluginLocalization.Format("PushError", "Failed to push stats: {0}", ex.Message), NotificationType.Error);
 		}
 	}
 

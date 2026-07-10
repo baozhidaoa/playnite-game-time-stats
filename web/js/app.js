@@ -6,6 +6,7 @@ window.GameStats = (function () {
   var periodOffset = 0;
 
   function init() {
+    applyLocalization();
     var mainDom = document.getElementById("mainChart");
     var hourlyDom = document.getElementById("hourlyChart");
     var genreDom = document.getElementById("genreChart");
@@ -66,7 +67,7 @@ window.GameStats = (function () {
     if (window.__STATS_DATA__) {
       loadData(window.__STATS_DATA__);
     } else {
-      showEmpty("等待数据...");
+      showEmpty(I18n.t("waitingData"));
     }
   }
 
@@ -85,6 +86,7 @@ window.GameStats = (function () {
   }
 
   function loadData(jsonData) {
+    applyLocalization();
     fullData = jsonData;
     renderAll();
   }
@@ -92,6 +94,7 @@ window.GameStats = (function () {
   // Called by DLL via injected script (PushData)
   function reload() {
     if (window.__STATS_DATA__) {
+      applyLocalization();
       fullData = window.__STATS_DATA__;
       renderAll();
     }
@@ -99,6 +102,7 @@ window.GameStats = (function () {
 
   function renderAll() {
     if (!fullData) return;
+    applyLocalization();
     UI.updateSummaryCards(fullData.Summary);
     renderMainChart();
     renderHourlyChart();
@@ -169,11 +173,11 @@ window.GameStats = (function () {
   function renderGenreChart() {
     if (!genreChart || !fullData) return;
     var data = getPeriodGenreData();
-    var labels = { week: "本周", month: "本月", year: "本年", total: "总计" };
+    var labels = getPeriodSummaryLabels();
     var hint = document.getElementById("genreFilterHint");
-    if (hint) hint.textContent = labels[currentPeriod] || "总计";
+    if (hint) hint.textContent = labels[currentPeriod] || I18n.t("total");
     genreChart.setOption(
-      Charts.createGenreRadarOption(data, labels[currentPeriod] || "总计"),
+      Charts.createGenreRadarOption(data, labels[currentPeriod] || I18n.t("total")),
       true,
     );
   }
@@ -255,12 +259,12 @@ window.GameStats = (function () {
 
   function getHourlyHint() {
     var labels = {
-      week: "本周每日平均",
-      month: "本月每日平均",
-      year: "本年每日平均",
-      total: "活跃日平均",
+      week: I18n.t("dailyAverageWeek"),
+      month: I18n.t("dailyAverageMonth"),
+      year: I18n.t("dailyAverageYear"),
+      total: I18n.t("activeDayAverage"),
     };
-    return labels[currentPeriod] || "每小时日均分钟";
+    return labels[currentPeriod] || I18n.t("hourlyDefaultHint");
   }
 
   function round1(v) {
@@ -390,20 +394,8 @@ window.GameStats = (function () {
       new Date().getMonth(),
       new Date().getDate(),
     );
-    var mCN = [
-      "1月",
-      "2月",
-      "3月",
-      "4月",
-      "5月",
-      "6月",
-      "7月",
-      "8月",
-      "9月",
-      "10月",
-      "11月",
-      "12月",
-    ];
+    var monthShort = I18n.list("monthNamesShort");
+    var monthLong = I18n.list("monthNamesLong", monthShort);
     switch (currentPeriod) {
       case "week": {
         var dow = (today.getDay() + 6) % 7;
@@ -411,13 +403,24 @@ window.GameStats = (function () {
         ws.setDate(today.getDate() - dow + periodOffset * 7);
         var we = new Date(ws);
         we.setDate(ws.getDate() + 6);
+        if (I18n.isZh()) {
+          return (
+            monthShort[ws.getMonth()] +
+            ws.getDate() +
+            "日 - " +
+            monthShort[we.getMonth()] +
+            we.getDate() +
+            "日"
+          );
+        }
         return (
-          mCN[ws.getMonth()] +
+          monthShort[ws.getMonth()] +
+          " " +
           ws.getDate() +
-          "日 - " +
-          mCN[we.getMonth()] +
-          we.getDate() +
-          "日"
+          " - " +
+          monthShort[we.getMonth()] +
+          " " +
+          we.getDate()
         );
       }
       case "month": {
@@ -426,12 +429,32 @@ window.GameStats = (function () {
           today.getMonth() + periodOffset,
           1,
         );
-        return m.getFullYear() + "年" + mCN[m.getMonth()];
+        if (I18n.isZh()) {
+          return m.getFullYear() + "年" + monthShort[m.getMonth()];
+        }
+        return monthLong[m.getMonth()] + " " + m.getFullYear();
       }
       case "year":
-        return today.getFullYear() + periodOffset + "年";
+        return String(today.getFullYear() + periodOffset) + (I18n.isZh() ? "年" : "");
       default:
-        return "全部时间";
+        return I18n.t("allTime");
+    }
+  }
+
+  function getPeriodSummaryLabels() {
+    return {
+      week: I18n.t("thisWeek"),
+      month: I18n.t("thisMonth"),
+      year: I18n.t("thisYear"),
+      total: I18n.t("total"),
+    };
+  }
+
+  function applyLocalization() {
+    if (window.__GTS_I18N__) {
+      I18n.set(window.__GTS_I18N__);
+    } else {
+      I18n.apply();
     }
   }
 

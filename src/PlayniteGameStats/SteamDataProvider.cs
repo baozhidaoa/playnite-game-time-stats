@@ -88,7 +88,23 @@ public class SteamDataProvider
 				}
 			}
 		}
-		return "自动检测：Playnite 明文 Steam API Key " + (string.IsNullOrEmpty(steamConfigDiscovery.ApiKey) ? "未找到" : "已找到") + "；SteamId64 " + ((!string.IsNullOrEmpty(steamConfigDiscovery.SteamId64)) ? "来自 Playnite 配置" : ((!string.IsNullOrEmpty(text)) ? ("可由本机 Steam userdata 推断为 " + text) : "未找到")) + "。Playnite Steam 集成页中的 API 密钥保存在加密令牌中，公共插件 SDK 未暴露读取接口；如需在线 Steam 同步，请在此页填入 API Key。";
+		string apiKeyStatus = string.IsNullOrEmpty(steamConfigDiscovery.ApiKey)
+			? PluginLocalization.Get("AutoConfigApiKeyMissing", "not found")
+			: PluginLocalization.Get("AutoConfigApiKeyFound", "found");
+		string steamIdStatus;
+		if (!string.IsNullOrEmpty(steamConfigDiscovery.SteamId64))
+		{
+			steamIdStatus = PluginLocalization.Get("AutoConfigSteamIdFromPlaynite", "from Playnite configuration");
+		}
+		else if (!string.IsNullOrEmpty(text))
+		{
+			steamIdStatus = PluginLocalization.Format("AutoConfigSteamIdFromLocal", "can be inferred from local Steam userdata as {0}", text);
+		}
+		else
+		{
+			steamIdStatus = PluginLocalization.Get("AutoConfigSteamIdMissing", "not found");
+		}
+		return PluginLocalization.Format("SettingsAutoSummary", "Auto-detection: Playnite plaintext Steam API Key {0}; SteamId64 {1}. The API Key from Playnite's Steam integration page is stored in an encrypted token and is not exposed through the public plugin SDK; enter an API Key here if online Steam sync is needed.", apiKeyStatus, steamIdStatus);
 	}
 
 	private static bool HasPlayniteSteamConfig()

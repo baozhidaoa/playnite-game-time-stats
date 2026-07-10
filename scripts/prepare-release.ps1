@@ -34,6 +34,7 @@ New-Item -ItemType Directory -Force -Path $dist | Out-Null
 
 Copy-Item -LiteralPath (Join-Path $root "extension.yaml") -Destination $stage
 Copy-Item -LiteralPath (Join-Path $root "icon.png") -Destination $stage
+Copy-Item -LiteralPath (Join-Path $root "Localization") -Destination $stage -Recurse
 Copy-Item -LiteralPath (Join-Path $root "web") -Destination $stage -Recurse
 Copy-Item -LiteralPath (Join-Path $buildOutput "PlayniteGameStats.dll") -Destination $stage
 
@@ -91,16 +92,28 @@ if ($null -eq $tool) {
     exit 0
 }
 
+$toolboxOutput = Join-Path $dist "$addonId.pext"
+foreach ($oldPackage in @($expectedPackage, $toolboxOutput)) {
+    if (Test-Path $oldPackage) {
+        Remove-Item -LiteralPath $oldPackage -Force
+    }
+}
+
 & $tool.Source pack $stage $dist
 
-$toolboxOutput = Join-Path $dist "$addonId.pext"
 if ((Test-Path $toolboxOutput) -and ($toolboxOutput -ne $expectedPackage)) {
     Move-Item -LiteralPath $toolboxOutput -Destination $expectedPackage -Force
 }
 
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+if (!(Test-Path $expectedPackage)) {
+    Write-Warning "Toolbox did not create the expected package. Creating a zip-compatible .pext from the staged extension."
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($stage, $expectedPackage, [System.IO.Compression.CompressionLevel]::Optimal, $false)
+}
+
 if (Test-Path $expectedPackage) {
-    Add-Type -AssemblyName System.IO.Compression
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
     $zip = [System.IO.Compression.ZipFile]::Open($expectedPackage, [System.IO.Compression.ZipArchiveMode]::Update)
     try {
         $dependencyEntry = $zip.Entries | Where-Object { $_.FullName -eq "Newtonsoft.Json.dll" } | Select-Object -First 1
