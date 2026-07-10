@@ -62,7 +62,7 @@ Before publishing, make sure `extension.yaml`, `LICENSE`, `manifests\installer.y
 
 - Update metadata and changelog for the target version.
 - Run `dotnet build src\PlayniteGameStats.csproj -c Release`.
-- Run `.\scripts\prepare-release.ps1 -GithubUser dnwkonisc`.
+- Run `.\scripts\prepare-release.ps1 -GithubUser baozhidaoa`.
 - Upload `dist\GameTimeStats_dc73bf2f-ffd7-40e0-acd4-08e2296a239e_1_0_0.pext` to GitHub Release `v1.0.0`.
 - Verify the installer manifest:
   `Toolbox.exe verify installer manifests\installer.yaml`
