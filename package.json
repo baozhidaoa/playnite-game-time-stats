@@ -1,0 +1,11 @@
+{
+  "name": "playnite-game-time-stats",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "sync-vendor": "node scripts/sync-vendor.js"
+  },
+  "dependencies": {
+    "echarts": "^6.1.0"
+  }
+}

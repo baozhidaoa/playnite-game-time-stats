@@ -1,0 +1,10 @@
+Id: GameTimeStats_Plugin
+Name: Game Time Statistics
+Author: Playnite Community
+Version: 1.0.0
+Module: PlayniteGameStats.dll
+Type: GenericPlugin
+Icon: icon.png
+Links:
+    - Name: GitHub
+      Url: https://github.com/user/playnite-game-stats

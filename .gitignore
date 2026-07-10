@@ -1,0 +1,36 @@
+# Node dependencies
+node_modules/
+
+# .NET build output and intermediate files
+bin/
+obj/
+src/bin/
+src/obj/
+*.pdb
+*.user
+*.suo
+*.cache
+*.nupkg
+*.snupkg
+
+# IDE and local machine state
+.vs/
+.vscode/
+.idea/
+*.log
+*.tmp
+*.bak
+Thumbs.db
+Desktop.ini
+
+# Local secrets or runtime data
+.env
+.env.*
+*.key
+*.pem
+*.pfx
+*.p12
+*.kdbx
+tokens.json
+sessions.json
+steam-snapshots.json

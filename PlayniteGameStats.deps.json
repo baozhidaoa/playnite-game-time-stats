@@ -1,0 +1,57 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "PlayniteGameStats/1.0.0": {
+        "dependencies": {
+          "Newtonsoft.Json": "13.0.3",
+          "PlayniteSDK": "6.11.0"
+        },
+        "runtime": {
+          "PlayniteGameStats.dll": {}
+        }
+      },
+      "Newtonsoft.Json/13.0.3": {
+        "runtime": {
+          "lib/net6.0/Newtonsoft.Json.dll": {
+            "assemblyVersion": "13.0.0.0",
+            "fileVersion": "13.0.3.27908"
+          }
+        }
+      },
+      "PlayniteSDK/6.11.0": {
+        "runtime": {
+          "lib/net462/Playnite.SDK.dll": {
+            "assemblyVersion": "6.11.0.0",
+            "fileVersion": "6.11.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "PlayniteGameStats/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Newtonsoft.Json/13.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ==",
+      "path": "newtonsoft.json/13.0.3",
+      "hashPath": "newtonsoft.json.13.0.3.nupkg.sha512"
+    },
+    "PlayniteSDK/6.11.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-1y8GoRDRAYFSPjEI3BT4JjwlcZKUfD6tvi9ZnHa1pNZ1w/l6GvM10ACLKN64VObVKsmdMl7fwkg3FzzpeteCmg==",
+      "path": "playnitesdk/6.11.0",
+      "hashPath": "playnitesdk.6.11.0.nupkg.sha512"
+    }
+  }
+}
