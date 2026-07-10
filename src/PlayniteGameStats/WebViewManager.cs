@@ -13,24 +13,48 @@ public class WebViewManager : IDisposable
 
 	private readonly StatsCalculator _statsCalculator;
 
+	private readonly string _pluginDataPath;
+
 	private IWebView _webView;
 
 	private bool _isOpen;
 
 	private string _webAssetPath;
 
-	public WebViewManager(IPlayniteAPI api, StatsCalculator statsCalculator)
+	public WebViewManager(IPlayniteAPI api, StatsCalculator statsCalculator, string pluginDataPath)
 	{
 		_api = api;
 		_statsCalculator = statsCalculator;
+		_pluginDataPath = pluginDataPath;
 	}
 
 	public void OpenOrFocus()
 	{
-		if (!_isOpen)
+		if (_isOpen && _webView != null)
+		{
+			RefreshIfOpen();
+			try
+			{
+				_webView.WindowHost?.Activate();
+			}
+			catch
+			{
+			}
+			return;
+		}
+		try
 		{
 			_webAssetPath = PrepareWebAssets();
 			_webView = _api.WebViews.CreateView(1100, 750, Color.FromRgb(28, 28, 30));
+			if (_webView.WindowHost != null)
+			{
+				_webView.WindowHost.Title = "Game Time Statistics";
+				_webView.WindowHost.Closed += delegate
+				{
+					_isOpen = false;
+					_webView = null;
+				};
+			}
 			_webView.LoadingChanged += delegate
 			{
 				PushData();
@@ -39,6 +63,13 @@ public class WebViewManager : IDisposable
 			_webView.Navigate(url);
 			_webView.Open();
 			_isOpen = true;
+			PushData();
+		}
+		catch (Exception ex)
+		{
+			_isOpen = false;
+			_webView = null;
+			_api.Notifications.Add("stats-open-error", "Failed to open game time statistics: " + ex.Message, NotificationType.Error);
 		}
 	}
 
@@ -54,13 +85,16 @@ public class WebViewManager : IDisposable
 	{
 		try
 		{
-			string text = JsonConvert.SerializeObject(_statsCalculator.GetFullStats(), new JsonSerializerSettings
+			if (_webView == null)
 			{
-				NullValueHandling = NullValueHandling.Ignore
-			}).Replace("\\", "\\\\").Replace("'", "\\'")
-				.Replace("\r", "")
-				.Replace("\n", "");
-			string script = "if(window.GameStats)window.GameStats.loadData(JSON.parse('" + text + "'));";
+				return;
+			}
+			string json = JsonConvert.SerializeObject(_statsCalculator.GetFullStats(), new JsonSerializerSettings
+			{
+				NullValueHandling = NullValueHandling.Ignore,
+				Formatting = Formatting.None
+			});
+			string script = "window.__STATS_DATA__ = " + json + "; if(window.GameStats)window.GameStats.loadData(window.__STATS_DATA__);";
 			_webView.EvaluateScriptAsync(script);
 		}
 		catch (Exception ex)
@@ -72,9 +106,9 @@ public class WebViewManager : IDisposable
 	private string PrepareWebAssets()
 	{
 		string sourceDir = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "web");
-		string text = Path.Combine(GetPluginDataPath(), "web-ui");
+		string text = Path.Combine(_pluginDataPath, "web-ui");
 		string path = Path.Combine(text, ".version");
-		string text2 = "1.1";
+		string text2 = GetSourceWebVersion(sourceDir);
 		bool flag = true;
 		if (File.Exists(path))
 		{
@@ -102,12 +136,24 @@ public class WebViewManager : IDisposable
 			CopyDirectory(sourceDir, text);
 			File.WriteAllText(path, text2);
 		}
+		File.WriteAllText(Path.Combine(text, "data.js"), "window.__STATS_DATA__ = null;");
 		return text;
 	}
 
-	private string GetPluginDataPath()
+	private static string GetSourceWebVersion(string sourceDir)
 	{
-		return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? ".";
+		try
+		{
+			string sourceVersion = Path.Combine(sourceDir, ".version");
+			if (File.Exists(sourceVersion))
+			{
+				return File.ReadAllText(sourceVersion).Trim();
+			}
+		}
+		catch
+		{
+		}
+		return typeof(WebViewManager).Assembly.GetName().Version.ToString();
 	}
 
 	private static void CopyDirectory(string sourceDir, string destDir)

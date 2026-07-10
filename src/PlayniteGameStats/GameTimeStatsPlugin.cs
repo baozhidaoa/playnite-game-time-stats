@@ -12,15 +12,13 @@ namespace PlayniteGameStats;
 
 public class GameTimeStatsPlugin : GenericPlugin
 {
-	private static readonly Guid PluginId = Guid.Parse("A1B2C3D4-E5F6-7890-ABCD-EF1234567890");
+	private static readonly Guid PluginId = Guid.Parse("dc73bf2f-ffd7-40e0-acd4-08e2296a239e");
 
 	private SessionStore _sessionStore;
 
 	private StatsCalculator _statsCalculator;
 
-	private StatsViewControl _statsView;
-
-	private EmbeddedPluginHost _embeddedHost;
+	private WebViewManager _webViewManager;
 
 	private PluginSettings _settings;
 
@@ -35,12 +33,13 @@ public class GameTimeStatsPlugin : GenericPlugin
 		{
 			HasSettings = true
 		};
-		string pluginDataPath = GetPluginDataPath();
+		string pluginDataPath = GetPluginUserDataPath();
+		Directory.CreateDirectory(pluginDataPath);
+		MigrateLegacyDataFiles(pluginDataPath);
 		_settings = LoadPluginSettings<PluginSettings>() ?? new PluginSettings();
 		_sessionStore = new SessionStore(pluginDataPath);
 		_statsCalculator = new StatsCalculator(PlayniteApi, _sessionStore, new SteamDataProvider(_settings), new SteamDeltaImporter(pluginDataPath, _sessionStore));
-		_statsView = new StatsViewControl(PlayniteApi, _statsCalculator);
-		_embeddedHost = new EmbeddedPluginHost(PlayniteApi, () => _statsView.CreateView());
+		_webViewManager = new WebViewManager(PlayniteApi, _statsCalculator, pluginDataPath);
 	}
 
 	public override ISettings GetSettings(bool firstRunSettings)
@@ -64,7 +63,7 @@ public class GameTimeStatsPlugin : GenericPlugin
 		topPanelItem.Icon = (File.Exists(text) ? text : null);
 		topPanelItem.Activated = delegate
 		{
-			_embeddedHost.ToggleGameStats();
+			_webViewManager.OpenOrFocus();
 		};
 		yield return topPanelItem;
 	}
@@ -82,7 +81,7 @@ public class GameTimeStatsPlugin : GenericPlugin
 		if (args.Game != null)
 		{
 			_sessionStore.CompleteActiveSession(args.Game.Id, (long)args.ElapsedSeconds, DateTime.UtcNow, ExtractSteamAppId(args.Game.GameId));
-			_statsView.RefreshData();
+			_webViewManager.RefreshIfOpen();
 		}
 	}
 
@@ -93,7 +92,7 @@ public class GameTimeStatsPlugin : GenericPlugin
 		StartHeartbeatTimer();
 		if (num > 0)
 		{
-			_statsView.RefreshData();
+			_webViewManager.RefreshIfOpen();
 		}
 	}
 
@@ -103,13 +102,7 @@ public class GameTimeStatsPlugin : GenericPlugin
 		_sessionStore.UpdateActiveHeartbeats();
 		SavePluginSettings(_settings);
 		_sessionStore.FlushIfDirty();
-		_embeddedHost.Clear();
-		_statsView.Dispose();
-	}
-
-	private string GetPluginDataPath()
-	{
-		return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? ".";
+		_webViewManager.Dispose();
 	}
 
 	private void StartHeartbeatTimer()
@@ -139,6 +132,31 @@ public class GameTimeStatsPlugin : GenericPlugin
 		{
 		}
 		_heartbeatTimer = null;
+	}
+
+	private static void MigrateLegacyDataFiles(string pluginDataPath)
+	{
+		string legacyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+		if (string.IsNullOrEmpty(legacyPath) || string.Equals(legacyPath, pluginDataPath, StringComparison.OrdinalIgnoreCase))
+		{
+			return;
+		}
+		foreach (string fileName in new[] { "sessions.json", "steam-snapshots.json" })
+		{
+			string source = Path.Combine(legacyPath, fileName);
+			string destination = Path.Combine(pluginDataPath, fileName);
+			try
+			{
+				if (File.Exists(source) && !File.Exists(destination))
+				{
+					Directory.CreateDirectory(pluginDataPath);
+					File.Copy(source, destination);
+				}
+			}
+			catch
+			{
+			}
+		}
 	}
 
 	private static string ExtractSteamAppId(string value)

@@ -1,0 +1,10 @@
+AddonId: GameTimeStats_dc73bf2f-ffd7-40e0-acd4-08e2296a239e
+Packages:
+  - Version: 1.0.0
+    RequiredApiVersion: 6.11.0
+    ReleaseDate: 2026-07-10
+    PackageUrl: https://github.com/dnwkonisc/playnite-game-time-stats/releases/download/v1.0.0/GameTimeStats_dc73bf2f-ffd7-40e0-acd4-08e2296a239e_1_0_0.pext
+    Changelog:
+      - Initial public release.
+      - Adds standalone game time statistics window.
+      - Tracks local Playnite sessions and optionally imports Steam playtime data.

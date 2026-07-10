@@ -4,8 +4,10 @@ node_modules/
 # .NET build output and intermediate files
 bin/
 obj/
+dist/
 src/bin/
 src/obj/
+*.pext
 *.pdb
 *.user
 *.suo
