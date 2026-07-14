@@ -1,6 +1,6 @@
 # Game Time Statistics / 游戏时间统计
 
-Game Time Statistics is a Playnite generic plugin that shows playtime trends, daily activity, hourly habits, genre distribution, and recent/top games in a standalone statistics window.
+Game Time Statistics is a Playnite generic plugin that shows playtime trends, daily activity, hourly habits, category distribution, and recent/top games in a standalone statistics window.
 
 Game Time Statistics 是一个 Playnite 通用插件，用独立统计窗口展示游戏时长趋势、每日活跃、时段分布、类型分布、最近游玩和最高时长游戏。
 
@@ -9,7 +9,7 @@ Game Time Statistics 是一个 Playnite 通用插件，用独立统计窗口展�
 - Standalone Playnite WebView window; no custom theme slot is required.
 - Tracks Playnite game sessions and recovers interrupted sessions after restart.
 - Reads local Steam userdata when available and can optionally call Steam Web API.
-- Shows heatmap, bar, line, hourly, genre, recent-games, and top-games views.
+- Shows heatmap, bar, line, hourly, category, recent-games, and top-games views.
 - Stores runtime data in Playnite's plugin user data folder, so updates do not overwrite user history.
 
 ## Installation / 安装

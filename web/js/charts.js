@@ -80,13 +80,6 @@ var Charts = (function () {
       width: Math.max(1, compactColumns) * (isWide ? WIDE_CELL_SIZE : compactCellSize),
       height: 7 * (isWide ? WIDE_CELL_SIZE : compactCellSize)
     };
-    function heatColor(v) {
-      if (!v || v <= 0) return '#1e1e24';
-      if (v < 30) return GREEN_LIGHT;
-      if (v < 60) return GREEN;
-      if (v < 120) return GREEN_MID;
-      return GREEN_DARK;
-    }
     return {
       tooltip: {
         trigger: 'item',
@@ -403,11 +396,11 @@ var Charts = (function () {
     };
   }
 
-  // ── Genre Radar ──
-  function createGenreRadarOption(genreStats, title) {
-    if (!genreStats || !genreStats.length) return emptyChart();
-    var names = genreStats.map(function (g) { return g.GenreName; });
-    var values = genreStats.map(function (g) { return Math.round(g.TotalMinutes / 60 * 10) / 10; });
+  // ── Category Radar ──
+  function createCategoryRadarOption(categoryStats, title) {
+    if (!categoryStats || !categoryStats.length) return emptyChart();
+    var names = categoryStats.map(function (c) { return c.CategoryName; });
+    var values = categoryStats.map(function (c) { return Math.round(c.TotalMinutes / 60 * 10) / 10; });
     var maxV = Math.max.apply(null, values.concat([1]));
 
     return {
@@ -472,6 +465,6 @@ var Charts = (function () {
     createBarOption: createBarOption,
     createLineOption: createLineOption,
     createHourlyOption: createHourlyOption,
-    createGenreRadarOption: createGenreRadarOption
+    createCategoryRadarOption: createCategoryRadarOption
   };
 })();

@@ -1,8 +1,8 @@
 namespace PlayniteGameStats;
 
-public class GenreStat
+public class CategoryStat
 {
-	public string GenreName;
+	public string CategoryName;
 
 	public double TotalMinutes;
 

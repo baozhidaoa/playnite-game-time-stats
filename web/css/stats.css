@@ -1,3 +1,36 @@
+:root {
+  --gts-background: #0f0f13;
+  --gts-surface: rgba(255, 255, 255, 0.03);
+  --gts-surface-strong: #1e1e24;
+  --gts-surface-soft: rgba(255, 255, 255, 0.025);
+  --gts-surface-hover: rgba(255, 255, 255, 0.05);
+  --gts-border: rgba(255, 255, 255, 0.06);
+  --gts-border-soft: rgba(255, 255, 255, 0.05);
+  --gts-text: #e0e0e0;
+  --gts-text-primary: #f0f0f0;
+  --gts-text-section: #ccc;
+  --gts-text-game: #ddd;
+  --gts-text-muted: #888;
+  --gts-text-subtle: #777;
+  --gts-text-faint: #666;
+  --gts-text-empty: #555;
+  --gts-accent: #40c463;
+  --gts-accent-light: #9be9a8;
+  --gts-accent-mid: #30a14e;
+  --gts-accent-strong: #216e39;
+  --gts-accent-icon: rgba(64, 196, 99, 0.12);
+  --gts-accent-soft: rgba(64, 196, 99, 0.15);
+  --gts-accent-hover-border: rgba(64, 196, 99, 0.25);
+  --gts-accent-game-border: rgba(64, 196, 99, 0.15);
+  --gts-accent-faint: rgba(64, 196, 99, 0.1);
+  --gts-warning: #ffa726;
+  --gts-warning-soft: rgba(255, 167, 38, 0.15);
+  --gts-warning-banner-soft: rgba(255, 167, 38, 0.06);
+  --gts-warning-banner-border: rgba(255, 167, 38, 0.15);
+  --gts-shadow: rgba(0, 0, 0, 0.3);
+  --gts-cover-background: rgba(255, 255, 255, 0.05);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -8,8 +41,8 @@ body {
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Microsoft YaHei", sans-serif;
-  background: #0f0f13;
-  color: #e0e0e0;
+  background: var(--gts-background);
+  color: var(--gts-text);
   overflow-x: hidden;
   overflow-y: auto;
   min-height: 100vh;
@@ -31,14 +64,14 @@ body {
 .app-title {
   font-size: 24px;
   font-weight: 700;
-  background: linear-gradient(135deg, #40c463 0%, #30a14e 100%);
+  background: linear-gradient(135deg, var(--gts-accent) 0%, var(--gts-accent-mid) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 .app-subtitle {
   font-size: 13px;
-  color: #666;
+  color: var(--gts-text-faint);
 }
 .refresh-btn {
   margin-left: auto;
@@ -46,7 +79,7 @@ body {
   height: 22px;
   border: none;
   background: transparent;
-  color: #555;
+  color: var(--gts-text-faint);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -58,9 +91,9 @@ body {
   padding: 0;
 }
 .refresh-btn:hover {
-  color: #40c463;
+  color: var(--gts-accent);
   opacity: 1;
-  background: rgba(64, 196, 99, 0.1);
+  background: var(--gts-accent-faint);
 }
 .refresh-btn:active {
   transform: scale(0.88);
@@ -77,29 +110,29 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--gts-surface);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--gts-border);
   border-radius: 16px;
   padding: 18px 16px;
   transition: all 0.25s;
 }
 .summary-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(64, 196, 99, 0.25);
+  background: var(--gts-surface-hover);
+  border-color: var(--gts-accent-hover-border);
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px var(--gts-shadow);
 }
 .card-icon {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: rgba(64, 196, 99, 0.12);
+  background: var(--gts-accent-icon);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #40c463;
+  color: var(--gts-accent);
   flex-shrink: 0;
 }
 .card-body {
@@ -107,13 +140,13 @@ body {
 }
 .card-label {
   font-size: 11px;
-  color: #888;
+  color: var(--gts-text-muted);
   margin-bottom: 2px;
 }
 .card-value {
   font-size: 24px;
   font-weight: 700;
-  color: #f0f0f0;
+  color: var(--gts-text-primary);
 }
 
 /* Control Bar */
@@ -129,8 +162,8 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--gts-surface);
+  border: 1px solid var(--gts-border);
   border-radius: 12px;
   padding: 4px;
 }
@@ -140,45 +173,45 @@ body {
   border-radius: 8px;
   font-size: 13px;
   cursor: pointer;
-  color: #888;
+  color: var(--gts-text-muted);
   background: transparent;
   transition: all 0.2s;
   font-family: inherit;
 }
 .period-tab:hover {
-  color: #ccc;
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--gts-text-section);
+  background: var(--gts-surface-hover);
 }
 .period-tab.active {
-  background: rgba(64, 196, 99, 0.15);
-  color: #40c463;
+  background: var(--gts-accent-soft);
+  color: var(--gts-accent);
   font-weight: 600;
 }
 .period-arrow {
   padding: 7px 10px;
   border: none;
   background: transparent;
-  color: #888;
+  color: var(--gts-text-muted);
   font-size: 16px;
   cursor: pointer;
   border-radius: 8px;
   font-family: inherit;
 }
 .period-arrow:hover {
-  color: #40c463;
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--gts-accent);
+  background: var(--gts-surface-hover);
 }
 .period-label {
   font-size: 12px;
-  color: #666;
+  color: var(--gts-text-faint);
   margin-left: 8px;
 }
 
 .chart-type-btns {
   display: flex;
   gap: 3px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--gts-surface);
+  border: 1px solid var(--gts-border);
   border-radius: 10px;
   padding: 3px;
 }
@@ -188,26 +221,26 @@ body {
   border-radius: 7px;
   font-size: 12px;
   cursor: pointer;
-  color: #888;
+  color: var(--gts-text-muted);
   background: transparent;
   transition: all 0.2s;
   font-family: inherit;
 }
 .chart-btn:hover {
-  color: #ccc;
+  color: var(--gts-text-section);
 }
 .chart-btn.active {
-  background: rgba(64, 196, 99, 0.15);
-  color: #40c463;
+  background: var(--gts-accent-soft);
+  color: var(--gts-accent);
   font-weight: 600;
 }
 
 /* Chart Cards */
 .chart-card {
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--gts-surface-soft);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--gts-border);
   border-radius: 16px;
   padding: 20px;
   margin-bottom: 14px;
@@ -226,11 +259,11 @@ body {
 .section-label {
   font-size: 14px;
   font-weight: 600;
-  color: #ccc;
+  color: var(--gts-text-section);
 }
 .section-hint {
   font-size: 11px;
-  color: #666;
+  color: var(--gts-text-faint);
 }
 .chart-legend {
   display: flex;
@@ -242,13 +275,28 @@ body {
   align-items: center;
   gap: 4px;
   font-size: 10px;
-  color: #777;
+  color: var(--gts-text-subtle);
 }
 .chart-legend .legend-item i {
   width: 10px;
   height: 10px;
   border-radius: 2px;
   display: inline-block;
+}
+.legend-zero {
+  background: var(--gts-surface-strong);
+}
+.legend-low {
+  background: var(--gts-accent-light);
+}
+.legend-medium {
+  background: var(--gts-accent);
+}
+.legend-high {
+  background: var(--gts-accent-mid);
+}
+.legend-max {
+  background: var(--gts-accent-strong);
 }
 
 #mainChart {
@@ -259,7 +307,7 @@ body {
   width: 100%;
   height: 220px;
 }
-#genreChart {
+#categoryChart {
   width: 100%;
   height: 360px;
 }
@@ -269,41 +317,6 @@ body {
   display: flex;
   gap: 14px;
   margin-bottom: 14px;
-}
-
-/* Genre Time Tabs */
-.genre-time-tabs {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 18px;
-  padding: 6px 14px;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-}
-.gt-label {
-  font-size: 12px;
-  color: #777;
-}
-.gt-tab {
-  padding: 5px 12px;
-  border: none;
-  border-radius: 6px;
-  font-size: 11px;
-  cursor: pointer;
-  color: #888;
-  background: transparent;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-.gt-tab:hover {
-  color: #ccc;
-}
-.gt-tab.active {
-  background: rgba(64, 196, 99, 0.12);
-  color: #40c463;
-  font-weight: 600;
 }
 
 /* Game Section */
@@ -322,22 +335,22 @@ body {
   display: flex;
   align-items: center;
   gap: 18px;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--gts-surface-soft);
+  border: 1px solid var(--gts-border-soft);
   border-radius: 14px;
   padding: 18px 20px;
   transition: all 0.2s;
   cursor: default;
 }
 .game-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(64, 196, 99, 0.15);
+  background: var(--gts-surface-hover);
+  border-color: var(--gts-accent-game-border);
 }
 .game-cover {
   width: 120px;
   height: 144px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--gts-cover-background);
   overflow: hidden;
   flex-shrink: 0;
   display: flex;
@@ -359,7 +372,7 @@ body {
 }
 .game-name {
   font-size: 16px;
-  color: #ddd;
+  color: var(--gts-text-game);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -367,54 +380,16 @@ body {
 }
 .game-meta {
   font-size: 13px;
-  color: #777;
+  color: var(--gts-text-subtle);
 }
 .game-badge {
   font-size: 11px;
   padding: 2px 6px;
   border-radius: 4px;
-  background: rgba(255, 167, 38, 0.15);
-  color: #ffa726;
+  background: var(--gts-warning-soft);
+  color: var(--gts-warning);
   display: inline-block;
   margin-left: 4px;
-}
-
-/* Game List (compact for side panels) */
-.game-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.game-list .game-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 10px;
-  transition: all 0.15s;
-}
-.game-list .game-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-}
-.game-list .game-cover {
-  width: 56px;
-  height: 70px;
-  border-radius: 6px;
-}
-.game-list .game-name {
-  font-size: 13px;
-}
-.game-list .game-meta {
-  font-size: 11px;
-}
-.game-list .game-time {
-  font-size: 13px;
-  font-weight: 600;
-  color: #40c463;
-  white-space: nowrap;
-  flex-shrink: 0;
 }
 
 /* Bottom Panels */
@@ -429,7 +404,7 @@ body {
 
 .empty-hint {
   text-align: center;
-  color: #555;
+  color: var(--gts-text-empty);
   padding: 32px 16px;
   font-size: 13px;
 }
@@ -438,10 +413,10 @@ body {
 .legacy-banner {
   margin-top: 18px;
   padding: 10px 16px;
-  background: rgba(255, 167, 38, 0.06);
-  border: 1px solid rgba(255, 167, 38, 0.15);
+  background: var(--gts-warning-banner-soft);
+  border: 1px solid var(--gts-warning-banner-border);
   border-radius: 10px;
-  color: #ffa726;
+  color: var(--gts-warning);
   font-size: 12px;
   text-align: center;
 }

@@ -9,14 +9,39 @@ internal static class PluginLocalization
 {
 	private const string Prefix = "LOCGameTimeStats";
 
-	public static string LanguageTag => Get("LanguageTag", "en-US");
+	private static IPlayniteAPI _api;
+
+	public static void Initialize(IPlayniteAPI api)
+	{
+		_api = api;
+	}
+
+	public static string LanguageTag
+	{
+		get
+		{
+			string language = null;
+			try
+			{
+				language = _api?.ApplicationSettings?.Language;
+			}
+			catch
+			{
+			}
+			if (string.IsNullOrWhiteSpace(language))
+			{
+				language = GetResource("LanguageTag");
+			}
+			return NormalizeLanguageTag(language);
+		}
+	}
 
 	public static string Get(string suffix, string fallback)
 	{
 		string key = Prefix + suffix;
 		try
 		{
-			string text = ResourceProvider.GetString(key);
+			string text = GetResource(suffix);
 			if (!string.IsNullOrWhiteSpace(text) && !string.Equals(text, key, StringComparison.Ordinal))
 			{
 				return text;
@@ -26,6 +51,39 @@ internal static class PluginLocalization
 		{
 		}
 		return fallback;
+	}
+
+	private static string GetResource(string suffix)
+	{
+		string key = Prefix + suffix;
+		try
+		{
+			string text = _api?.Resources?.GetString(key);
+			if (!string.IsNullOrWhiteSpace(text))
+			{
+				return text;
+			}
+		}
+		catch
+		{
+		}
+		try
+		{
+			return ResourceProvider.GetString(key);
+		}
+		catch
+		{
+			return null;
+		}
+	}
+
+	private static string NormalizeLanguageTag(string language)
+	{
+		if (!string.IsNullOrWhiteSpace(language) && language.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
+		{
+			return "zh-CN";
+		}
+		return "en-US";
 	}
 
 	public static string Format(string suffix, string fallback, params object[] args)
@@ -59,7 +117,7 @@ internal static class PluginLocalization
 			["playTrend"] = Get("WebPlayTrend", "Play trend"),
 			["hourlyDistribution"] = Get("WebHourlyDistribution", "Hourly distribution"),
 			["hourlyDefaultHint"] = Get("WebHourlyDefaultHint", "Average minutes per hour"),
-			["genrePreference"] = Get("WebGenrePreference", "Genre preference"),
+			["categoryPreference"] = Get("WebCategoryPreference", "Category preference"),
 			["recentGames"] = Get("WebRecentGames", "Recently played"),
 			["topPlaytime"] = Get("WebTopPlaytime", "Top playtime"),
 			["favoriteGames"] = Get("WebFavoriteGames", "Favorite games"),

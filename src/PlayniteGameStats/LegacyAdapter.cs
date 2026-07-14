@@ -7,13 +7,6 @@ namespace PlayniteGameStats;
 
 public class LegacyAdapter
 {
-	private readonly SessionStore _sessionStore;
-
-	public LegacyAdapter(SessionStore sessionStore)
-	{
-		_sessionStore = sessionStore;
-	}
-
 	public List<DailyStat> SynthesizeStats(Game game, SteamAppStats steamStats)
 	{
 		List<DailyStat> list = new List<DailyStat>();
@@ -66,12 +59,4 @@ public class LegacyAdapter
 		return list;
 	}
 
-	public bool IsLegacyGame(Game game)
-	{
-		if (game.Playtime != 0L)
-		{
-			return !_sessionStore.HasSessionsForGame(game.Id);
-		}
-		return false;
-	}
 }

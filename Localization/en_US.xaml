@@ -6,10 +6,10 @@
     <sys:String x:Key="LOCGameTimeStatsOpenError">Failed to open game time statistics: {0}</sys:String>
     <sys:String x:Key="LOCGameTimeStatsPushError">Failed to push stats: {0}</sys:String>
     <sys:String x:Key="LOCGameTimeStatsSettingsSteamData">Steam data</sys:String>
-    <sys:String x:Key="LOCGameTimeStatsSettingsEnableOnlineSteamSync">Enable online Steam sync (when left blank, existing Playnite/Steam configuration is used first)</sys:String>
+    <sys:String x:Key="LOCGameTimeStatsSettingsEnableOnlineSteamSync">Enable online Steam sync (disabled by default; local Steam data remains available)</sys:String>
     <sys:String x:Key="LOCGameTimeStatsSettingsSteamApiKey">Steam API Key</sys:String>
     <sys:String x:Key="LOCGameTimeStatsSettingsSteamId64">SteamId64 (leave blank to infer from local Steam userdata)</sys:String>
-    <sys:String x:Key="LOCGameTimeStatsSettingsPriorityNote">Priority: values entered in this plugin &gt; plaintext Steam API/SteamId from Playnite extension configuration &gt; SteamId64 inferred from local Steam userdata. The API Key from Playnite's Steam integration page is stored in an encrypted token and is not exposed through the public SDK; without an API Key, the plugin will still read local Steam localconfig.vdf.</sys:String>
+    <sys:String x:Key="LOCGameTimeStatsSettingsPriorityNote">When online sync is enabled, priority is: values entered in this plugin &gt; plaintext Steam API/SteamId from Playnite extension configuration &gt; SteamId64 inferred from local Steam userdata. The API Key from Playnite's Steam integration page is stored in an encrypted token and is not exposed through the public SDK; local Steam data is always read when available.</sys:String>
     <sys:String x:Key="LOCGameTimeStatsAutoConfigApiKeyFound">found</sys:String>
     <sys:String x:Key="LOCGameTimeStatsAutoConfigApiKeyMissing">not found</sys:String>
     <sys:String x:Key="LOCGameTimeStatsAutoConfigSteamIdFromPlaynite">from Playnite configuration</sys:String>
@@ -46,7 +46,7 @@
     <sys:String x:Key="LOCGameTimeStatsWebPlayTrend">Play trend</sys:String>
     <sys:String x:Key="LOCGameTimeStatsWebHourlyDistribution">Hourly distribution</sys:String>
     <sys:String x:Key="LOCGameTimeStatsWebHourlyDefaultHint">Average minutes per hour</sys:String>
-    <sys:String x:Key="LOCGameTimeStatsWebGenrePreference">Genre preference</sys:String>
+    <sys:String x:Key="LOCGameTimeStatsWebCategoryPreference">Category preference</sys:String>
     <sys:String x:Key="LOCGameTimeStatsWebRecentGames">Recently played</sys:String>
     <sys:String x:Key="LOCGameTimeStatsWebTopPlaytime">Top playtime</sys:String>
     <sys:String x:Key="LOCGameTimeStatsWebFavoriteGames">Favorite games</sys:String>

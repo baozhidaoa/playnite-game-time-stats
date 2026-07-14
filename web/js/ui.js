@@ -44,20 +44,6 @@ var UI = (function () {
       .join("");
   }
 
-  function updateGameList(containerId, games) {
-    var container = document.getElementById(containerId);
-    if (!container) return;
-    if (!games || !games.length) {
-      container.innerHTML = '<div class="empty-hint">--</div>';
-      return;
-    }
-    container.innerHTML = games
-      .map(function (g) {
-        return renderGameItem(g);
-      })
-      .join("");
-  }
-
   function renderGameCard(g) {
     var coverHtml = renderCover(g, 120, 144);
     var badge = renderBadge(g);
@@ -76,32 +62,6 @@ var UI = (function () {
       '<div class="game-meta">' +
       formatCardMeta(g) +
       "</div>" +
-      "</div>" +
-      "</div>"
-    );
-  }
-
-  function renderGameItem(g) {
-    var coverHtml = renderCover(g, 56, 70);
-    var badge = renderBadge(g);
-    return (
-      '<div class="game-item">' +
-      '<div class="game-cover">' +
-      coverHtml +
-      "</div>" +
-      '<div class="game-info">' +
-      '<div class="game-name" title="' +
-      escapeHtml(g.GameName) +
-      '">' +
-      escapeHtml(g.GameName) +
-      badge +
-      "</div>" +
-      '<div class="game-meta">' +
-      formatSessionText(g) +
-      "</div>" +
-      "</div>" +
-      '<div class="game-time">' +
-      formatMinutesAsHours(g.MinutesPlayed) +
       "</div>" +
       "</div>"
     );
@@ -136,13 +96,6 @@ var UI = (function () {
       escapeHtml(raw) +
       "</span>"
     );
-  }
-
-  function formatSessionText(g) {
-    if (!g || !g.SessionCount) {
-      return g && g.DataSource ? g.DataSource : I18n.t("estimatedData");
-    }
-    return I18n.format("playsCount", "{0} plays", g.SessionCount);
   }
 
   function formatCardMeta(g) {
@@ -209,8 +162,7 @@ var UI = (function () {
     tabs.forEach(function (tab) {
       var val =
         tab.getAttribute("data-period") ||
-        tab.getAttribute("data-chart") ||
-        tab.getAttribute("data-gt");
+        tab.getAttribute("data-chart");
       tab.classList.toggle(activeClass, val === targetValue);
     });
   }
@@ -247,7 +199,6 @@ var UI = (function () {
     updatePeriodLabel: updatePeriodLabel,
     updateHourlyHint: updateHourlyHint,
     updateGameGrid: updateGameGrid,
-    updateGameList: updateGameList,
     updateLegacyBanner: updateLegacyBanner,
     updateChartLegend: updateChartLegend,
     setActiveTab: setActiveTab,
