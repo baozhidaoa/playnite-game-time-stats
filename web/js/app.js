@@ -1,5 +1,5 @@
 window.GameStats = (function () {
-  var mainChart, hourlyChart, genreChart;
+  var mainChart, hourlyChart, categoryChart;
   var fullData = null;
   var currentPeriod = "week";
   var currentChartType = "heatmap";
@@ -9,19 +9,19 @@ window.GameStats = (function () {
     applyLocalization();
     var mainDom = document.getElementById("mainChart");
     var hourlyDom = document.getElementById("hourlyChart");
-    var genreDom = document.getElementById("genreChart");
+    var categoryDom = document.getElementById("categoryChart");
 
     if (mainDom)
       mainChart = echarts.init(mainDom, null, { renderer: "canvas" });
     if (hourlyDom)
       hourlyChart = echarts.init(hourlyDom, null, { renderer: "canvas" });
-    if (genreDom)
-      genreChart = echarts.init(genreDom, null, { renderer: "canvas" });
+    if (categoryDom)
+      categoryChart = echarts.init(categoryDom, null, { renderer: "canvas" });
 
     window.addEventListener("resize", function () {
       if (mainChart) mainChart.resize();
       if (hourlyChart) hourlyChart.resize();
-      if (genreChart) genreChart.resize();
+      if (categoryChart) categoryChart.resize();
     });
 
     // Period tabs
@@ -63,7 +63,7 @@ window.GameStats = (function () {
       });
     }
 
-    // Load initial data from statically included data.js
+    // The host injects the initial data after the local page finishes loading.
     if (window.__STATS_DATA__) {
       loadData(window.__STATS_DATA__);
     } else {
@@ -82,7 +82,7 @@ window.GameStats = (function () {
     };
     if (mainChart) mainChart.setOption(emp);
     if (hourlyChart) hourlyChart.setOption(emp);
-    if (genreChart) genreChart.setOption(emp);
+    if (categoryChart) categoryChart.setOption(emp);
   }
 
   function loadData(jsonData) {
@@ -106,7 +106,7 @@ window.GameStats = (function () {
     UI.updateSummaryCards(fullData.Summary);
     renderMainChart();
     renderHourlyChart();
-    renderGenreChart();
+    renderCategoryChart();
     renderGameLists();
     UI.updateLegacyBanner(fullData);
     UI.updatePeriodLabel(getPeriodLabel());
@@ -170,14 +170,14 @@ window.GameStats = (function () {
     );
   }
 
-  function renderGenreChart() {
-    if (!genreChart || !fullData) return;
-    var data = getPeriodGenreData();
+  function renderCategoryChart() {
+    if (!categoryChart || !fullData) return;
+    var data = getPeriodCategoryData();
     var labels = getPeriodSummaryLabels();
-    var hint = document.getElementById("genreFilterHint");
+    var hint = document.getElementById("categoryFilterHint");
     if (hint) hint.textContent = labels[currentPeriod] || I18n.t("total");
-    genreChart.setOption(
-      Charts.createGenreRadarOption(data, labels[currentPeriod] || I18n.t("total")),
+    categoryChart.setOption(
+      Charts.createCategoryRadarOption(data, labels[currentPeriod] || I18n.t("total")),
       true,
     );
   }
@@ -315,17 +315,17 @@ window.GameStats = (function () {
     return { start: fmtDate(start), end: fmtDate(end) };
   }
 
-  function getPeriodGenreData() {
+  function getPeriodCategoryData() {
     if (!fullData) return [];
     switch (currentPeriod) {
       case "week":
-        return fullData.GenreStatsWeek || fullData.GenreStats || [];
+        return fullData.CategoryStatsWeek || fullData.CategoryStats || [];
       case "month":
-        return fullData.GenreStatsMonth || fullData.GenreStats || [];
+        return fullData.CategoryStatsMonth || fullData.CategoryStats || [];
       case "year":
-        return fullData.GenreStatsYear || fullData.GenreStats || [];
+        return fullData.CategoryStatsYear || fullData.CategoryStats || [];
       default:
-        return fullData.GenreStats || [];
+        return fullData.CategoryStats || [];
     }
   }
 

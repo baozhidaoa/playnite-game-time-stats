@@ -6,10 +6,10 @@
     <sys:String x:Key="LOCGameTimeStatsOpenError">打开游戏时间统计失败：{0}</sys:String>
     <sys:String x:Key="LOCGameTimeStatsPushError">推送统计数据失败：{0}</sys:String>
     <sys:String x:Key="LOCGameTimeStatsSettingsSteamData">Steam 数据</sys:String>
-    <sys:String x:Key="LOCGameTimeStatsSettingsEnableOnlineSteamSync">启用在线 Steam 同步（留空时优先读取 Playnite/Steam 已有配置）</sys:String>
+    <sys:String x:Key="LOCGameTimeStatsSettingsEnableOnlineSteamSync">启用在线 Steam 同步（默认关闭；仍会读取本地 Steam 数据）</sys:String>
     <sys:String x:Key="LOCGameTimeStatsSettingsSteamApiKey">Steam API Key</sys:String>
     <sys:String x:Key="LOCGameTimeStatsSettingsSteamId64">SteamId64（留空时自动从本机 Steam userdata 推断）</sys:String>
-    <sys:String x:Key="LOCGameTimeStatsSettingsPriorityNote">优先级：本插件填写的值 &gt; Playnite 扩展配置中的明文 Steam API/SteamId &gt; 本机 Steam userdata 推断 SteamId64。Playnite Steam 集成页的 API Key 存在加密令牌中，插件无法通过公共 SDK 直接读取；无 API Key 时仍会读取本机 Steam localconfig.vdf。</sys:String>
+    <sys:String x:Key="LOCGameTimeStatsSettingsPriorityNote">启用在线同步时，优先级为：本插件填写的值 &gt; Playnite 扩展配置中的明文 Steam API/SteamId &gt; 本机 Steam userdata 推断 SteamId64。Playnite Steam 集成页的 API Key 存在加密令牌中，插件无法通过公共 SDK 直接读取；无论是否开启在线同步，只要可用都会读取本机 Steam 数据。</sys:String>
     <sys:String x:Key="LOCGameTimeStatsAutoConfigApiKeyFound">已找到</sys:String>
     <sys:String x:Key="LOCGameTimeStatsAutoConfigApiKeyMissing">未找到</sys:String>
     <sys:String x:Key="LOCGameTimeStatsAutoConfigSteamIdFromPlaynite">来自 Playnite 配置</sys:String>
@@ -46,7 +46,7 @@
     <sys:String x:Key="LOCGameTimeStatsWebPlayTrend">游玩趋势</sys:String>
     <sys:String x:Key="LOCGameTimeStatsWebHourlyDistribution">时段分布</sys:String>
     <sys:String x:Key="LOCGameTimeStatsWebHourlyDefaultHint">每小时日均分钟</sys:String>
-    <sys:String x:Key="LOCGameTimeStatsWebGenrePreference">类型偏好</sys:String>
+    <sys:String x:Key="LOCGameTimeStatsWebCategoryPreference">分类偏好</sys:String>
     <sys:String x:Key="LOCGameTimeStatsWebRecentGames">近期游玩</sys:String>
     <sys:String x:Key="LOCGameTimeStatsWebTopPlaytime">总时长排行</sys:String>
     <sys:String x:Key="LOCGameTimeStatsWebFavoriteGames">最喜爱的游戏</sys:String>

@@ -9,6 +9,16 @@ namespace PlayniteGameStats;
 
 public class SteamDataProvider
 {
+	private sealed class SteamWebClient : WebClient
+	{
+		protected override WebRequest GetWebRequest(Uri address)
+		{
+			WebRequest request = base.GetWebRequest(address);
+			request.Timeout = 10000;
+			return request;
+		}
+	}
+
 	private class SteamConfigDiscovery
 	{
 		public string ApiKey;
@@ -18,6 +28,18 @@ public class SteamDataProvider
 
 	private readonly PluginSettings _settings;
 
+	private readonly object _cacheLock = new object();
+
+	private Dictionary<string, SteamAppStats> _cachedStats;
+
+	private DateTime _cacheExpiresUtc = DateTime.MinValue;
+
+	private string _cachedSettingsKey;
+
+	private SteamConfigDiscovery _cachedConfig;
+
+	private DateTime _configExpiresUtc = DateTime.MinValue;
+
 	public SteamDataProvider(PluginSettings settings)
 	{
 		_settings = settings ?? new PluginSettings();
@@ -25,14 +47,31 @@ public class SteamDataProvider
 
 	public Dictionary<string, SteamAppStats> Load()
 	{
-		Dictionary<string, SteamAppStats> dictionary = LoadLocal();
-		string steamApiKey = GetSteamApiKey();
-		string steamId = GetSteamId64();
-		if ((_settings.EnableOnlineSteamSync || HasPlayniteSteamConfig()) && !string.IsNullOrEmpty(steamApiKey) && !string.IsNullOrEmpty(steamId))
+		string settingsKey = BuildSettingsKey();
+		lock (_cacheLock)
 		{
-			Merge(dictionary, LoadOnline(steamApiKey, steamId));
+			if (_cachedStats != null && DateTime.UtcNow < _cacheExpiresUtc && string.Equals(settingsKey, _cachedSettingsKey, StringComparison.Ordinal))
+			{
+				return Clone(_cachedStats);
+			}
 		}
-		return dictionary;
+		Dictionary<string, SteamAppStats> dictionary = LoadLocal();
+		if (_settings.EnableOnlineSteamSync)
+		{
+			string steamApiKey = GetSteamApiKey();
+			string steamId = GetSteamId64();
+			if (!string.IsNullOrEmpty(steamApiKey) && !string.IsNullOrEmpty(steamId))
+			{
+				Merge(dictionary, LoadOnline(steamApiKey, steamId));
+			}
+		}
+		lock (_cacheLock)
+		{
+			_cachedStats = dictionary;
+			_cachedSettingsKey = settingsKey;
+			_cacheExpiresUtc = DateTime.UtcNow.AddSeconds(_settings.EnableOnlineSteamSync ? 300.0 : 30.0);
+			return Clone(dictionary);
+		}
 	}
 
 	public string GetSteamApiKey()
@@ -41,7 +80,7 @@ public class SteamDataProvider
 		{
 			return _settings.SteamApiKey;
 		}
-		return DiscoverPlayniteSteamConfig().ApiKey;
+		return GetConfigDiscovery().ApiKey;
 	}
 
 	public string GetSteamId64()
@@ -50,7 +89,7 @@ public class SteamDataProvider
 		{
 			return _settings.SteamId64;
 		}
-		string steamId = DiscoverPlayniteSteamConfig().SteamId64;
+		string steamId = GetConfigDiscovery().SteamId64;
 		if (!string.IsNullOrEmpty(steamId))
 		{
 			return steamId;
@@ -69,6 +108,29 @@ public class SteamDataProvider
 			}
 		}
 		return null;
+	}
+
+	private string BuildSettingsKey()
+	{
+		return (_settings.EnableOnlineSteamSync ? "1" : "0") + "|" + (_settings.SteamApiKey ?? "").Trim() + "|" + (_settings.SteamId64 ?? "").Trim();
+	}
+
+	private SteamConfigDiscovery GetConfigDiscovery()
+	{
+		lock (_cacheLock)
+		{
+			if (_cachedConfig != null && DateTime.UtcNow < _configExpiresUtc)
+			{
+				return _cachedConfig;
+			}
+		}
+		SteamConfigDiscovery config = DiscoverPlayniteSteamConfig();
+		lock (_cacheLock)
+		{
+			_cachedConfig = config;
+			_configExpiresUtc = DateTime.UtcNow.AddMinutes(5.0);
+			return config;
+		}
 	}
 
 	public static string GetAutoConfigSummary()
@@ -107,16 +169,6 @@ public class SteamDataProvider
 		return PluginLocalization.Format("SettingsAutoSummary", "Auto-detection: Playnite plaintext Steam API Key {0}; SteamId64 {1}. The API Key from Playnite's Steam integration page is stored in an encrypted token and is not exposed through the public plugin SDK; enter an API Key here if online Steam sync is needed.", apiKeyStatus, steamIdStatus);
 	}
 
-	private static bool HasPlayniteSteamConfig()
-	{
-		SteamConfigDiscovery steamConfigDiscovery = DiscoverPlayniteSteamConfig();
-		if (string.IsNullOrEmpty(steamConfigDiscovery.ApiKey))
-		{
-			return !string.IsNullOrEmpty(steamConfigDiscovery.SteamId64);
-		}
-		return true;
-	}
-
 	private Dictionary<string, SteamAppStats> LoadLocal()
 	{
 		Dictionary<string, SteamAppStats> result = new Dictionary<string, SteamAppStats>(StringComparer.OrdinalIgnoreCase);
@@ -129,6 +181,25 @@ public class SteamDataProvider
 		foreach (string file in files)
 		{
 			ParseLocalConfig(file, result);
+		}
+		return result;
+	}
+
+	private static Dictionary<string, SteamAppStats> Clone(Dictionary<string, SteamAppStats> source)
+	{
+		Dictionary<string, SteamAppStats> result = new Dictionary<string, SteamAppStats>(StringComparer.OrdinalIgnoreCase);
+		foreach (KeyValuePair<string, SteamAppStats> item in source)
+		{
+			SteamAppStats value = item.Value;
+			result[item.Key] = new SteamAppStats
+			{
+				AppId = value.AppId,
+				PlaytimeMinutes = value.PlaytimeMinutes,
+				Playtime2WeeksMinutes = value.Playtime2WeeksMinutes,
+				PlaytimeDisconnectedMinutes = value.PlaytimeDisconnectedMinutes,
+				LastPlayed = value.LastPlayed,
+				Source = value.Source
+			};
 		}
 		return result;
 	}
@@ -236,7 +307,7 @@ public class SteamDataProvider
 		Dictionary<string, SteamAppStats> result = new Dictionary<string, SteamAppStats>(StringComparer.OrdinalIgnoreCase);
 		try
 		{
-			using WebClient webClient = new WebClient();
+			using WebClient webClient = new SteamWebClient();
 			string address = "https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=" + Uri.EscapeDataString(apiKey) + "&steamid=" + Uri.EscapeDataString(steamId) + "&format=json&include_appinfo=false";
 			ParseOwnedGames(webClient.DownloadString(address), result);
 			string address2 = "https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=" + Uri.EscapeDataString(apiKey) + "&steamid=" + Uri.EscapeDataString(steamId) + "&format=json";

@@ -1,9 +1,12 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Media;
 using Newtonsoft.Json;
 using Playnite.SDK;
+using Playnite.SDK.Events;
 
 namespace PlayniteGameStats;
 
@@ -13,19 +16,22 @@ public class WebViewManager : IDisposable
 
 	private readonly StatsCalculator _statsCalculator;
 
-	private readonly string _pluginDataPath;
-
 	private IWebView _webView;
 
 	private bool _isOpen;
 
-	private string _webAssetPath;
+	private readonly object _refreshLock = new object();
 
-	public WebViewManager(IPlayniteAPI api, StatsCalculator statsCalculator, string pluginDataPath)
+	private int _refreshVersion;
+
+	private bool _refreshRunning;
+
+	private bool _disposed;
+
+	public WebViewManager(IPlayniteAPI api, StatsCalculator statsCalculator)
 	{
 		_api = api;
 		_statsCalculator = statsCalculator;
-		_pluginDataPath = pluginDataPath;
 	}
 
 	public void OpenOrFocus()
@@ -44,26 +50,34 @@ public class WebViewManager : IDisposable
 		}
 		try
 		{
-			_webAssetPath = PrepareWebAssets();
-			_webView = _api.WebViews.CreateView(1100, 750, Color.FromRgb(28, 28, 30));
+			string webAssetPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "web");
+			_webView = _api.WebViews.CreateView(1100, 750, Color.FromRgb(15, 15, 19));
 			if (_webView.WindowHost != null)
 			{
 				_webView.WindowHost.Title = PluginLocalization.Get("WindowTitle", "Game Time Statistics");
+				_webView.WindowHost.Background = new SolidColorBrush(Color.FromRgb(15, 15, 19));
 				_webView.WindowHost.Closed += delegate
 				{
-					_isOpen = false;
-					_webView = null;
+					lock (_refreshLock)
+					{
+						_isOpen = false;
+						_webView = null;
+						_refreshVersion++;
+					}
 				};
 			}
-			_webView.LoadingChanged += delegate
+			_webView.LoadingChanged += delegate(object sender, WebViewLoadingChangedEventArgs args)
 			{
-				PushData();
+				if (!args.IsLoading)
+				{
+					QueueDataRefresh();
+				}
 			};
-			string url = "file:///" + Path.Combine(_webAssetPath, "index.html").Replace("\\", "/").Replace(" ", "%20");
+			string url = new Uri(Path.Combine(webAssetPath, "index.html")).AbsoluteUri;
 			_webView.Navigate(url);
 			_webView.Open();
 			_isOpen = true;
-			PushData();
+			QueueDataRefresh();
 		}
 		catch (Exception ex)
 		{
@@ -77,114 +91,159 @@ public class WebViewManager : IDisposable
 	{
 		if (_isOpen && _webView != null)
 		{
-			PushData();
+			QueueDataRefresh();
 		}
 	}
 
-	private void PushData()
+	public void InvalidateAndRefresh()
 	{
-		try
+		_statsCalculator.Invalidate();
+		RefreshIfOpen();
+	}
+
+	private void QueueDataRefresh()
+	{
+		lock (_refreshLock)
 		{
-			if (_webView == null)
+			if (_disposed || _webView == null)
 			{
 				return;
 			}
-			string json = JsonConvert.SerializeObject(_statsCalculator.GetFullStats(), new JsonSerializerSettings
+			_refreshVersion++;
+			if (_refreshRunning)
 			{
-				NullValueHandling = NullValueHandling.Ignore,
-				Formatting = Formatting.None
-			});
-			string l10n = JsonConvert.SerializeObject(PluginLocalization.GetWebStrings(), new JsonSerializerSettings
-			{
-				NullValueHandling = NullValueHandling.Ignore,
-				Formatting = Formatting.None
-			});
-			string script = "window.__GTS_I18N__ = " + l10n + "; if(window.I18n)window.I18n.set(window.__GTS_I18N__); window.__STATS_DATA__ = " + json + "; if(window.GameStats)window.GameStats.loadData(window.__STATS_DATA__);";
-			_webView.EvaluateScriptAsync(script);
+				return;
+			}
+			_refreshRunning = true;
 		}
-		catch (Exception ex)
-		{
-			_api.Notifications.Add("stats-push-error", PluginLocalization.Format("PushError", "Failed to push stats: {0}", ex.Message), NotificationType.Error);
-		}
+		Task.Factory.StartNew(ProcessDataRefresh, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 	}
 
-	private string PrepareWebAssets()
+	private void ProcessDataRefresh()
 	{
-		string sourceDir = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "web");
-		string text = Path.Combine(_pluginDataPath, "web-ui");
-		string path = Path.Combine(text, ".version");
-		string text2 = GetSourceWebVersion(sourceDir);
-		bool flag = true;
-		if (File.Exists(path))
+		while (true)
 		{
-			try
+			int version;
+			lock (_refreshLock)
 			{
-				flag = File.ReadAllText(path).Trim() != text2;
-			}
-			catch
-			{
-				flag = true;
-			}
-		}
-		if (flag)
-		{
-			try
-			{
-				if (Directory.Exists(text))
+				if (_disposed || _webView == null)
 				{
-					Directory.Delete(text, recursive: true);
+					_refreshRunning = false;
+					return;
+				}
+				version = _refreshVersion;
+			}
+
+			string script;
+			try
+			{
+				script = BuildDataScript();
+			}
+			catch (Exception ex)
+			{
+				ReportError("stats-push-error", "Failed to prepare statistics: {0}", ex);
+				script = null;
+			}
+
+			if (!string.IsNullOrEmpty(script))
+			{
+				DispatchDataScript(script);
+			}
+
+			lock (_refreshLock)
+			{
+				if (_disposed || _webView == null || version == _refreshVersion)
+				{
+					_refreshRunning = false;
+					return;
 				}
 			}
-			catch
-			{
-			}
-			CopyDirectory(sourceDir, text);
-			File.WriteAllText(path, text2);
 		}
-		File.WriteAllText(Path.Combine(text, "data.js"), "window.__STATS_DATA__ = null;");
-		return text;
 	}
 
-	private static string GetSourceWebVersion(string sourceDir)
+	private string BuildDataScript()
+	{
+		string json = JsonConvert.SerializeObject(_statsCalculator.GetFullStats(), new JsonSerializerSettings
+		{
+			NullValueHandling = NullValueHandling.Ignore,
+			Formatting = Formatting.None
+		});
+		string l10n = JsonConvert.SerializeObject(PluginLocalization.GetWebStrings(), new JsonSerializerSettings
+		{
+			NullValueHandling = NullValueHandling.Ignore,
+			Formatting = Formatting.None
+		});
+		return "window.__GTS_I18N__ = " + l10n + "; if(window.I18n)window.I18n.set(window.__GTS_I18N__); window.__STATS_DATA__ = " + json + "; if(window.GameStats)window.GameStats.loadData(window.__STATS_DATA__);";
+	}
+
+	private void DispatchDataScript(string script)
 	{
 		try
 		{
-			string sourceVersion = Path.Combine(sourceDir, ".version");
-			if (File.Exists(sourceVersion))
+			if (_webView?.WindowHost?.Dispatcher == null)
 			{
-				return File.ReadAllText(sourceVersion).Trim();
+				return;
+			}
+			_webView.WindowHost.Dispatcher.BeginInvoke(new Action(delegate
+			{
+				try
+				{
+					if (!_disposed && _webView != null)
+					{
+						_webView.EvaluateScriptAsync(script);
+					}
+				}
+				catch (Exception ex)
+				{
+					ReportError("stats-push-error", "Failed to push stats: {0}", ex);
+				}
+			}));
+		}
+		catch
+		{
+		}
+	}
+
+	private void ReportError(string id, string fallback, Exception ex)
+	{
+		Action action = delegate
+		{
+			try
+			{
+				_api.Notifications.Add(id, PluginLocalization.Format("PushError", fallback, ex.Message), NotificationType.Error);
+			}
+			catch
+			{
+			}
+		};
+		try
+		{
+			if (_webView?.WindowHost?.Dispatcher != null && !_webView.WindowHost.Dispatcher.CheckAccess())
+			{
+				_webView.WindowHost.Dispatcher.BeginInvoke(action);
+				return;
 			}
 		}
 		catch
 		{
 		}
-		return typeof(WebViewManager).Assembly.GetName().Version.ToString();
-	}
-
-	private static void CopyDirectory(string sourceDir, string destDir)
-	{
-		Directory.CreateDirectory(destDir);
-		string[] files = Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories);
-		foreach (string text in files)
-		{
-			string path = text.Substring(sourceDir.Length).TrimStart('\\', '/');
-			string text2 = Path.Combine(destDir, path);
-			string directoryName = Path.GetDirectoryName(text2);
-			if (!string.IsNullOrEmpty(directoryName))
-			{
-				Directory.CreateDirectory(directoryName);
-			}
-			File.Copy(text, text2, overwrite: true);
-		}
+		action();
 	}
 
 	public void Dispose()
 	{
-		_isOpen = false;
-		if (_webView != null)
+		IWebView webView;
+		lock (_refreshLock)
 		{
-			_webView.Dispose();
+			_disposed = true;
+			_isOpen = false;
+			_refreshVersion++;
+			webView = _webView;
 			_webView = null;
+		}
+		if (webView != null)
+		{
+			webView.Dispose();
 		}
 	}
 }

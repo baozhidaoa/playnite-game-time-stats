@@ -19,7 +19,15 @@ public class StatsCalculator
 
 	private readonly SteamDeltaImporter _steamDeltaImporter;
 
-	private Dictionary<string, string> _coverIndex;
+	private readonly object _cacheLock = new object();
+
+	private readonly object _computeLock = new object();
+
+	private ChartDataPackage _cachedStats;
+
+	private int _dataVersion;
+
+	private int _cachedVersion = -1;
 
 	private string _libraryFilesDir;
 
@@ -27,54 +35,55 @@ public class StatsCalculator
 	{
 		_api = api;
 		_sessionStore = sessionStore;
-		_legacyAdapter = new LegacyAdapter(sessionStore);
+		_legacyAdapter = new LegacyAdapter();
 		_steamDataProvider = steamDataProvider;
 		_steamDeltaImporter = steamDeltaImporter;
 		_libraryFilesDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Playnite", "library", "files");
-		_coverIndex = BuildCoverIndex();
 	}
 
-	private Dictionary<string, string> BuildCoverIndex()
+	public void Invalidate()
 	{
-		Dictionary<string, string> dictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-		try
+		lock (_cacheLock)
 		{
-			if (!Directory.Exists(_libraryFilesDir))
-			{
-				return dictionary;
-			}
-			string[] files = Directory.GetFiles(_libraryFilesDir, "*.*", SearchOption.AllDirectories);
-			foreach (string text in files)
-			{
-				string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(text);
-				string fileName = Path.GetFileName(text);
-				if (!string.IsNullOrEmpty(fileNameWithoutExtension) && !dictionary.ContainsKey(fileNameWithoutExtension))
-				{
-					dictionary[fileNameWithoutExtension] = text;
-				}
-				if (!string.IsNullOrEmpty(fileName) && !dictionary.ContainsKey(fileName))
-				{
-					dictionary[fileName] = text;
-				}
-				string text2 = text.Substring(_libraryFilesDir.Length).TrimStart('\\', '/');
-				if (!string.IsNullOrEmpty(text2) && !dictionary.ContainsKey(text2))
-				{
-					dictionary[text2] = text;
-				}
-				string text3 = text2.Replace('\\', '/');
-				if (!string.IsNullOrEmpty(text3) && !dictionary.ContainsKey(text3))
-				{
-					dictionary[text3] = text;
-				}
-			}
+			_dataVersion++;
 		}
-		catch
-		{
-		}
-		return dictionary;
 	}
 
 	public ChartDataPackage GetFullStats()
+	{
+		int requestedVersion;
+		lock (_cacheLock)
+		{
+			if (_cachedStats != null && _cachedVersion == _dataVersion)
+			{
+				return _cachedStats;
+			}
+			requestedVersion = _dataVersion;
+		}
+		lock (_computeLock)
+		{
+			lock (_cacheLock)
+			{
+				if (_cachedStats != null && _cachedVersion == _dataVersion)
+				{
+					return _cachedStats;
+				}
+				requestedVersion = _dataVersion;
+			}
+			ChartDataPackage stats = BuildFullStats();
+			lock (_cacheLock)
+			{
+				if (requestedVersion == _dataVersion)
+				{
+					_cachedStats = stats;
+					_cachedVersion = requestedVersion;
+				}
+			}
+			return stats;
+		}
+	}
+
+	private ChartDataPackage BuildFullStats()
 	{
 		List<Game> games = ((_api.Database.Games != null) ? _api.Database.Games.ToList() : new List<Game>());
 		Dictionary<string, SteamAppStats> steamStats = ((_steamDataProvider != null) ? _steamDataProvider.Load() : new Dictionary<string, SteamAppStats>(StringComparer.OrdinalIgnoreCase));
@@ -82,25 +91,27 @@ public class StatsCalculator
 		_sessionStore.FlushIfDirty();
 		List<SessionRecord> allSessions = _sessionStore.GetAllSessions();
 		bool hasSessionData = _sessionStore.HasAnySessions();
+		Dictionary<string, List<SessionRecord>> sessionsByGame = BuildSessionMap(allSessions);
 		Dictionary<string, string> gameNames = BuildGameNameMap(games);
 		List<DailyStat> dailyStats = ComputeDailyStats(games, allSessions, steamStats, gameNames);
-		Dictionary<Guid, GamePlayed> gamePlaytime = ComputeGamePlaytime(games, allSessions, steamStats);
+		Dictionary<Guid, GamePlayed> gamePlaytime = ComputeGamePlaytime(games, sessionsByGame, steamStats);
 		SummaryStats summary = ComputeSummary(dailyStats, gamePlaytime);
 		List<GamePlayed> topGames = ComputeTopGames(gamePlaytime);
 		List<GamePlayed> periodGames = ComputePeriodGames(gamePlaytime, allSessions);
 		List<GamePlayed> recentGames = ComputeRecentGames(gamePlaytime);
 		DateTime nowLocal = DateTime.Now;
-		Dictionary<Guid, string> genreNames = BuildGenreNameMap();
-		List<GenreStat> source = ComputeGenreStats(gamePlaytime, games, genreNames, allSessions, DateTime.MinValue, DateTime.MaxValue);
+		Dictionary<Guid, string> categoryNames = BuildCategoryNameMap();
+		Dictionary<Guid, Game> gamesById = games.ToDictionary((Game game) => game.Id);
+		List<CategoryStat> source = ComputeCategoryStats(gamePlaytime, gamesById, categoryNames, sessionsByGame, DateTime.MinValue, DateTime.MaxValue);
 		List<HourlyDateStat> hourlyDateStats = ComputeHourlyDateStats(allSessions, gameNames);
 		DateTime yearStartUtc = LocalToUtc(new DateTime(nowLocal.Year, 1, 1));
-		List<GenreStat> source2 = ComputeGenreStats(gamePlaytime, games, genreNames, allSessions, yearStartUtc, DateTime.MaxValue);
+		List<CategoryStat> source2 = ComputeCategoryStats(gamePlaytime, gamesById, categoryNames, sessionsByGame, yearStartUtc, DateTime.MaxValue);
 		DateTime monthStartUtc = LocalToUtc(new DateTime(nowLocal.Year, nowLocal.Month, 1));
-		List<GenreStat> source3 = ComputeGenreStats(gamePlaytime, games, genreNames, allSessions, monthStartUtc, DateTime.MaxValue);
+		List<CategoryStat> source3 = ComputeCategoryStats(gamePlaytime, gamesById, categoryNames, sessionsByGame, monthStartUtc, DateTime.MaxValue);
 		DateTime todayLocal = nowLocal.Date;
 		int dayOfWeek = (int)todayLocal.DayOfWeek;
 		DateTime weekStartUtc = LocalToUtc(todayLocal.AddDays(-((dayOfWeek == 0) ? 6 : (dayOfWeek - 1))));
-		List<GenreStat> source4 = ComputeGenreStats(gamePlaytime, games, genreNames, allSessions, weekStartUtc, DateTime.MaxValue);
+		List<CategoryStat> source4 = ComputeCategoryStats(gamePlaytime, gamesById, categoryNames, sessionsByGame, weekStartUtc, DateTime.MaxValue);
 		return new ChartDataPackage
 		{
 			Summary = summary,
@@ -108,19 +119,19 @@ public class StatsCalculator
 			PeriodGames = periodGames,
 			TopGames = topGames,
 			RecentGames = recentGames,
-			GenreStats = source.OrderByDescending((GenreStat g) => g.TotalMinutes).Take(10).ToList(),
+			CategoryStats = source.OrderByDescending((CategoryStat g) => g.TotalMinutes).Take(10).ToList(),
 			HourlyDateStats = hourlyDateStats,
-			GenreStatsWeek = source4.OrderByDescending((GenreStat g) => g.TotalMinutes).Take(10).ToList(),
-			GenreStatsMonth = source3.OrderByDescending((GenreStat g) => g.TotalMinutes).Take(10).ToList(),
-			GenreStatsYear = source2.OrderByDescending((GenreStat g) => g.TotalMinutes).Take(10).ToList(),
+			CategoryStatsWeek = source4.OrderByDescending((CategoryStat g) => g.TotalMinutes).Take(10).ToList(),
+			CategoryStatsMonth = source3.OrderByDescending((CategoryStat g) => g.TotalMinutes).Take(10).ToList(),
+			CategoryStatsYear = source2.OrderByDescending((CategoryStat g) => g.TotalMinutes).Take(10).ToList(),
 			HasSessionData = hasSessionData
 		};
 	}
 
-	private Dictionary<Guid, string> BuildGenreNameMap()
+	private Dictionary<Guid, string> BuildCategoryNameMap()
 	{
 		Dictionary<Guid, string> dictionary = new Dictionary<Guid, string>();
-		foreach (Genre item in (_api.Database.Genres != null) ? _api.Database.Genres.ToList() : new List<Genre>())
+		foreach (Category item in (_api.Database.Categories != null) ? _api.Database.Categories.ToList() : new List<Category>())
 		{
 			dictionary[item.Id] = item.Name;
 		}
@@ -141,9 +152,15 @@ public class StatsCalculator
 		return dictionary;
 	}
 
+	private static Dictionary<string, List<SessionRecord>> BuildSessionMap(List<SessionRecord> sessions)
+	{
+		return sessions.GroupBy((SessionRecord session) => session.GameId, StringComparer.OrdinalIgnoreCase).ToDictionary((IGrouping<string, SessionRecord> group) => group.Key, (IGrouping<string, SessionRecord> group) => group.ToList(), StringComparer.OrdinalIgnoreCase);
+	}
+
 	private List<DailyStat> ComputeDailyStats(List<Game> games, List<SessionRecord> allSessions, Dictionary<string, SteamAppStats> steamStats, Dictionary<string, string> gameNames)
 	{
 		Dictionary<string, DailyStat> dictionary = new Dictionary<string, DailyStat>();
+		HashSet<string> sessionGameIds = new HashSet<string>(allSessions.Select((SessionRecord session) => session.GameId), StringComparer.OrdinalIgnoreCase);
 		foreach (SessionRecord session in allSessions)
 		{
 			AddSessionToDaily(dictionary, session, gameNames);
@@ -151,7 +168,7 @@ public class StatsCalculator
 		foreach (Game game in games)
 		{
 			SteamAppStats steamStats2 = GetSteamStats(game, steamStats);
-			if (_sessionStore.HasSessionsForGame(game.Id) || (game.Playtime == 0L && GetSteamTotalMinutes(steamStats2) <= 0.0))
+			if (sessionGameIds.Contains(game.Id.ToString()) || (game.Playtime == 0L && GetSteamTotalMinutes(steamStats2) <= 0.0))
 			{
 				continue;
 			}
@@ -179,17 +196,42 @@ public class StatsCalculator
 		return dictionary.Values.ToList();
 	}
 
-	private Dictionary<Guid, GamePlayed> ComputeGamePlaytime(List<Game> games, List<SessionRecord> allSessions, Dictionary<string, SteamAppStats> steamStats)
+	private Dictionary<Guid, GamePlayed> ComputeGamePlaytime(List<Game> games, Dictionary<string, List<SessionRecord>> sessionsByGame, Dictionary<string, SteamAppStats> steamStats)
 	{
 		Dictionary<Guid, GamePlayed> dictionary = new Dictionary<Guid, GamePlayed>();
 		foreach (Game game in games)
 		{
 			string gameIdStr = game.Id.ToString();
-			List<SessionRecord> sessions = allSessions.Where((SessionRecord s) => s.GameId == gameIdStr).ToList();
+			if (!sessionsByGame.TryGetValue(gameIdStr, out List<SessionRecord> sessions))
+			{
+				sessions = new List<SessionRecord>();
+			}
 			SteamAppStats steamStats2 = GetSteamStats(game, steamStats);
-			double exactMinutes = sessions.Where(IsExactSession).Sum(GetDurationMinutes);
-			double recoveredMinutes = sessions.Where(IsRecoveredSession).Sum(GetDurationMinutes);
-			double steamDeltaMinutes = sessions.Where(IsSteamDeltaSession).Sum(GetDurationMinutes);
+			double exactMinutes = 0.0;
+			double recoveredMinutes = 0.0;
+			double steamDeltaMinutes = 0.0;
+			int sessionCount = 0;
+			foreach (SessionRecord session in sessions)
+			{
+				double durationMinutes = GetDurationMinutes(session);
+				if (durationMinutes <= 0.0)
+				{
+					continue;
+				}
+				sessionCount++;
+				if (IsSteamDeltaSession(session))
+				{
+					steamDeltaMinutes += durationMinutes;
+				}
+				else if (IsRecoveredSession(session))
+				{
+					recoveredMinutes += durationMinutes;
+				}
+				else if (IsExactSession(session))
+				{
+					exactMinutes += durationMinutes;
+				}
+			}
 			double sessionTotal = exactMinutes + recoveredMinutes + steamDeltaMinutes;
 			double steamTotal = GetSteamTotalMinutes(steamStats2);
 			double playniteTotal = (game.Playtime != 0L) ? ((double)game.Playtime / 60.0) : 0.0;
@@ -209,7 +251,7 @@ public class StatsCalculator
 				RecoveredMinutes = recoveredMinutes,
 				SteamDeltaMinutes = steamDeltaMinutes,
 				EstimatedMinutes = estimatedMinutes,
-				SessionCount = sessions.Count((SessionRecord s) => GetDurationMinutes(s) > 0.0),
+				SessionCount = sessionCount,
 				IsEstimated = estimatedMinutes > 0.0 || steamDeltaMinutes > 0.0,
 				CoverImage = ResolveCover(game.CoverImage),
 				IconImage = ResolveCover(game.Icon),
@@ -270,29 +312,10 @@ public class StatsCalculator
 		{
 			return raw;
 		}
-		string text = Path.Combine(_libraryFilesDir, raw);
-		if (File.Exists(text))
+		string candidate = Path.Combine(_libraryFilesDir, raw);
+		if (File.Exists(candidate))
 		{
-			return text;
-		}
-		if (_coverIndex.TryGetValue(raw, out string value))
-		{
-			return value;
-		}
-		string text2 = raw.Replace('\\', '/');
-		if (_coverIndex.TryGetValue(text2, out value))
-		{
-			return value;
-		}
-		string fileName = Path.GetFileName(text2);
-		if (!string.IsNullOrEmpty(fileName) && _coverIndex.TryGetValue(fileName, out value))
-		{
-			return value;
-		}
-		string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
-		if (!string.IsNullOrEmpty(fileNameWithoutExtension) && _coverIndex.TryGetValue(fileNameWithoutExtension, out value))
-		{
-			return value;
+			return candidate;
 		}
 		return null;
 	}
@@ -374,29 +397,28 @@ public class StatsCalculator
 		return list;
 	}
 
-	private List<GenreStat> ComputeGenreStats(Dictionary<Guid, GamePlayed> gamePlaytime, List<Game> games, Dictionary<Guid, string> genreNames, List<SessionRecord> sessions, DateTime fromUtc, DateTime toUtc)
+	private List<CategoryStat> ComputeCategoryStats(Dictionary<Guid, GamePlayed> gamePlaytime, Dictionary<Guid, Game> games, Dictionary<Guid, string> categoryNames, Dictionary<string, List<SessionRecord>> sessionsByGame, DateTime fromUtc, DateTime toUtc)
 	{
-		Dictionary<string, GenreStat> dictionary = new Dictionary<string, GenreStat>();
+		Dictionary<string, CategoryStat> dictionary = new Dictionary<string, CategoryStat>();
 		foreach (KeyValuePair<Guid, GamePlayed> kvp in gamePlaytime)
 		{
-			Game game = games.FirstOrDefault((Game g) => g.Id.ToString() == kvp.Value.GameId);
-			if (game == null || game.GenreIds == null)
+			if (!games.TryGetValue(kvp.Key, out Game game) || game.CategoryIds == null)
 			{
 				continue;
 			}
-			double num = (fromUtc <= DateTime.MinValue) ? kvp.Value.MinutesPlayed : SumSessionMinutes(sessions, kvp.Value.GameId, fromUtc, toUtc);
+			double num = (fromUtc <= DateTime.MinValue) ? kvp.Value.MinutesPlayed : SumSessionMinutes(sessionsByGame, kvp.Value.GameId, fromUtc, toUtc);
 			if (!IsEffectiveMinutes(num))
 			{
 				continue;
 			}
-			foreach (Guid genreId in game.GenreIds)
+			foreach (Guid categoryId in game.CategoryIds)
 			{
-				string text = (genreNames.ContainsKey(genreId) ? genreNames[genreId] : PluginLocalization.Get("DataSourceOther", "Other"));
-				if (!dictionary.TryGetValue(text, out GenreStat value))
+				string text = (categoryNames.ContainsKey(categoryId) ? categoryNames[categoryId] : PluginLocalization.Get("DataSourceOther", "Other"));
+				if (!dictionary.TryGetValue(text, out CategoryStat value))
 				{
-					value = new GenreStat
+					value = new CategoryStat
 					{
-						GenreName = text,
+						CategoryName = text,
 						TotalMinutes = 0.0,
 						GameCount = 0
 					};
@@ -607,10 +629,14 @@ public class StatsCalculator
 		}
 	}
 
-	private static double SumSessionMinutes(List<SessionRecord> sessions, string gameId, DateTime fromUtc, DateTime toUtc)
+	private static double SumSessionMinutes(Dictionary<string, List<SessionRecord>> sessionsByGame, string gameId, DateTime fromUtc, DateTime toUtc)
 	{
 		double total = 0.0;
-		foreach (SessionRecord session in sessions.Where((SessionRecord s) => s.GameId == gameId))
+		if (!sessionsByGame.TryGetValue(gameId, out List<SessionRecord> sessions))
+		{
+			return total;
+		}
+		foreach (SessionRecord session in sessions)
 		{
 			total += SumSessionMinutesInRange(session, fromUtc, toUtc);
 		}
@@ -706,13 +732,15 @@ public class StatsCalculator
 
 	private static string FormatMinutes(double minutes)
 	{
+		string minuteUnit = PluginLocalization.Get("WebUnitMinuteShort", "m");
+		string hourUnit = PluginLocalization.Get("WebUnitHourShort", "h");
 		if (minutes < 60.0)
 		{
-			return Math.Round(minutes) + "m";
+			return Math.Round(minutes) + minuteUnit;
 		}
 		int h = (int)(minutes / 60.0);
 		int m = (int)Math.Round(minutes % 60.0);
-		return m == 0 ? h + "h" : h + "h" + m + "m";
+		return m == 0 ? h + hourUnit : h + hourUnit + m + minuteUnit;
 	}
 
 	private static bool IsExactSession(SessionRecord session)

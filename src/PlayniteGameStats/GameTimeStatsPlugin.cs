@@ -29,6 +29,7 @@ public class GameTimeStatsPlugin : GenericPlugin
 	public GameTimeStatsPlugin(IPlayniteAPI api)
 		: base(api)
 	{
+		PluginLocalization.Initialize(PlayniteApi);
 		base.Properties = new GenericPluginProperties
 		{
 			HasSettings = true
@@ -39,7 +40,7 @@ public class GameTimeStatsPlugin : GenericPlugin
 		_settings = LoadPluginSettings<PluginSettings>() ?? new PluginSettings();
 		_sessionStore = new SessionStore(pluginDataPath);
 		_statsCalculator = new StatsCalculator(PlayniteApi, _sessionStore, new SteamDataProvider(_settings), new SteamDeltaImporter(pluginDataPath, _sessionStore));
-		_webViewManager = new WebViewManager(PlayniteApi, _statsCalculator, pluginDataPath);
+		_webViewManager = new WebViewManager(PlayniteApi, _statsCalculator);
 	}
 
 	public override ISettings GetSettings(bool firstRunSettings)
@@ -73,6 +74,7 @@ public class GameTimeStatsPlugin : GenericPlugin
 		if (args.Game != null)
 		{
 			_sessionStore.StartActiveSession(args.Game.Id, ExtractSteamAppId(args.Game.GameId));
+			_statsCalculator.Invalidate();
 		}
 	}
 
@@ -81,7 +83,7 @@ public class GameTimeStatsPlugin : GenericPlugin
 		if (args.Game != null)
 		{
 			_sessionStore.CompleteActiveSession(args.Game.Id, (long)args.ElapsedSeconds, DateTime.UtcNow, ExtractSteamAppId(args.Game.GameId));
-			_webViewManager.RefreshIfOpen();
+			_webViewManager.InvalidateAndRefresh();
 		}
 	}
 
@@ -89,6 +91,7 @@ public class GameTimeStatsPlugin : GenericPlugin
 	{
 		_sessionStore.Load();
 		int num = _sessionStore.RecoverAbandonedActiveSessions();
+		_statsCalculator.Invalidate();
 		StartHeartbeatTimer();
 		if (num > 0)
 		{

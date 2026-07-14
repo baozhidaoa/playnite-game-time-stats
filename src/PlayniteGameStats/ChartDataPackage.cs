@@ -14,15 +14,15 @@ public class ChartDataPackage
 
 	public List<GamePlayed> RecentGames;
 
-	public List<GenreStat> GenreStats;
+	public List<CategoryStat> CategoryStats;
 
 	public List<HourlyDateStat> HourlyDateStats;
 
-	public List<GenreStat> GenreStatsWeek;
+	public List<CategoryStat> CategoryStatsWeek;
 
-	public List<GenreStat> GenreStatsMonth;
+	public List<CategoryStat> CategoryStatsMonth;
 
-	public List<GenreStat> GenreStatsYear;
+	public List<CategoryStat> CategoryStatsYear;
 
 	public bool HasSessionData;
 }

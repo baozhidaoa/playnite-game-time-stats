@@ -22,7 +22,7 @@ window.I18n = (function () {
     playTrend: "Play trend",
     hourlyDistribution: "Hourly distribution",
     hourlyDefaultHint: "Average minutes per hour",
-    genrePreference: "Genre preference",
+    categoryPreference: "Category preference",
     recentGames: "Recently played",
     topPlaytime: "Top playtime",
     favoriteGames: "Favorite games",

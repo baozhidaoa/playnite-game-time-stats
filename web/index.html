@@ -36,7 +36,6 @@
           </svg>
         </button>
       </div>
-      <!-- rest unchanged -->
       <div class="summary-cards">
         <div class="summary-card">
           <div class="card-icon">
@@ -142,19 +141,19 @@
           <span class="section-label" data-i18n="playTrend">Play trend</span>
           <div class="chart-legend" id="chartLegend">
             <span class="legend-item"
-              ><i style="background: #2d2d2d"></i>0</span
+              ><i class="legend-zero"></i>0</span
             >
             <span class="legend-item"
-              ><i style="background: #9be9a8"></i><30m</span
+              ><i class="legend-low"></i><30m</span
             >
             <span class="legend-item"
-              ><i style="background: #40c463"></i>30-60m</span
+              ><i class="legend-medium"></i>30-60m</span
             >
             <span class="legend-item"
-              ><i style="background: #30a14e"></i>1-2h</span
+              ><i class="legend-high"></i>1-2h</span
             >
             <span class="legend-item"
-              ><i style="background: #216e39"></i>2h+</span
+              ><i class="legend-max"></i>2h+</span
             >
           </div>
         </div>
@@ -170,10 +169,10 @@
         </div>
         <div class="chart-card half">
           <div class="chart-title-row">
-            <span class="section-label" data-i18n="genrePreference">Genre preference</span>
-            <span class="section-hint" id="genreFilterHint" data-i18n="allTime">All time</span>
+            <span class="section-label" data-i18n="categoryPreference">Category preference</span>
+            <span class="section-hint" id="categoryFilterHint" data-i18n="allTime">All time</span>
           </div>
-          <div id="genreChart"></div>
+          <div id="categoryChart"></div>
         </div>
       </div>
       <div class="game-section">
@@ -201,7 +200,6 @@
       </div>
     </div>
 
-    <script src="data.js"></script>
     <script src="js/vendor/echarts.min.js"></script>
     <script src="js/i18n.js"></script>
     <script src="js/charts.js"></script>
