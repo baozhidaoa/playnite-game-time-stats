@@ -26,6 +26,10 @@ public class WebViewManager : IDisposable
 
 	private bool _refreshRunning;
 
+	private bool _forceLocalSteamRefresh;
+
+	private bool _forceOnlineSteamRefresh;
+
 	private bool _disposed;
 
 	public WebViewManager(IPlayniteAPI api, StatsCalculator statsCalculator)
@@ -70,14 +74,13 @@ public class WebViewManager : IDisposable
 			{
 				if (!args.IsLoading)
 				{
-					QueueDataRefresh();
+					QueueDataRefresh(true, IsManualRefresh());
 				}
 			};
 			string url = new Uri(Path.Combine(webAssetPath, "index.html")).AbsoluteUri;
 			_webView.Navigate(url);
 			_webView.Open();
 			_isOpen = true;
-			QueueDataRefresh();
 		}
 		catch (Exception ex)
 		{
@@ -91,17 +94,33 @@ public class WebViewManager : IDisposable
 	{
 		if (_isOpen && _webView != null)
 		{
-			QueueDataRefresh();
+			QueueDataRefresh(true, false);
 		}
 	}
 
 	public void InvalidateAndRefresh()
 	{
 		_statsCalculator.Invalidate();
-		RefreshIfOpen();
+		if (_isOpen && _webView != null)
+		{
+			QueueDataRefresh(false, false);
+		}
 	}
 
-	private void QueueDataRefresh()
+	private bool IsManualRefresh()
+	{
+		try
+		{
+			string address = _webView?.GetCurrentAddress();
+			return !string.IsNullOrEmpty(address) && address.IndexOf("refresh=", StringComparison.OrdinalIgnoreCase) >= 0;
+		}
+		catch
+		{
+			return false;
+		}
+	}
+
+	private void QueueDataRefresh(bool forceLocalSteamRefresh, bool forceOnlineSteamRefresh)
 	{
 		lock (_refreshLock)
 		{
@@ -110,6 +129,8 @@ public class WebViewManager : IDisposable
 				return;
 			}
 			_refreshVersion++;
+			_forceLocalSteamRefresh |= forceLocalSteamRefresh;
+			_forceOnlineSteamRefresh |= forceOnlineSteamRefresh;
 			if (_refreshRunning)
 			{
 				return;
@@ -124,6 +145,8 @@ public class WebViewManager : IDisposable
 		while (true)
 		{
 			int version;
+			bool forceLocalSteamRefresh;
+			bool forceOnlineSteamRefresh;
 			lock (_refreshLock)
 			{
 				if (_disposed || _webView == null)
@@ -132,12 +155,16 @@ public class WebViewManager : IDisposable
 					return;
 				}
 				version = _refreshVersion;
+				forceLocalSteamRefresh = _forceLocalSteamRefresh;
+				forceOnlineSteamRefresh = _forceOnlineSteamRefresh;
+				_forceLocalSteamRefresh = false;
+				_forceOnlineSteamRefresh = false;
 			}
 
 			string script;
 			try
 			{
-				script = BuildDataScript();
+				script = BuildDataScript(version, forceLocalSteamRefresh, forceOnlineSteamRefresh);
 			}
 			catch (Exception ex)
 			{
@@ -161,8 +188,9 @@ public class WebViewManager : IDisposable
 		}
 	}
 
-	private string BuildDataScript()
+	private string BuildDataScript(int version, bool forceLocalSteamRefresh, bool forceOnlineSteamRefresh)
 	{
+		_statsCalculator.Invalidate(forceLocalSteamRefresh, forceOnlineSteamRefresh);
 		string json = JsonConvert.SerializeObject(_statsCalculator.GetFullStats(), new JsonSerializerSettings
 		{
 			NullValueHandling = NullValueHandling.Ignore,
@@ -173,7 +201,7 @@ public class WebViewManager : IDisposable
 			NullValueHandling = NullValueHandling.Ignore,
 			Formatting = Formatting.None
 		});
-		return "window.__GTS_I18N__ = " + l10n + "; if(window.I18n)window.I18n.set(window.__GTS_I18N__); window.__STATS_DATA__ = " + json + "; if(window.GameStats)window.GameStats.loadData(window.__STATS_DATA__);";
+		return "window.__GTS_I18N__ = " + l10n + "; if(window.I18n)window.I18n.set(window.__GTS_I18N__); window.__GTS_DATA_VERSION__ = " + version + "; window.__STATS_DATA__ = " + json + "; if(window.GameStats)window.GameStats.loadData(window.__STATS_DATA__, window.__GTS_DATA_VERSION__);";
 	}
 
 	private void DispatchDataScript(string script)

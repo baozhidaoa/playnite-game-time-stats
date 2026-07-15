@@ -32,6 +32,10 @@ public class SteamDataProvider
 
 	private Dictionary<string, SteamAppStats> _cachedStats;
 
+	private Dictionary<string, SteamAppStats> _cachedOnlineStats;
+
+	private DateTime _onlineCacheExpiresUtc = DateTime.MinValue;
+
 	private DateTime _cacheExpiresUtc = DateTime.MinValue;
 
 	private string _cachedSettingsKey;
@@ -47,10 +51,15 @@ public class SteamDataProvider
 
 	public Dictionary<string, SteamAppStats> Load()
 	{
+		return Load(false, false);
+	}
+
+	public Dictionary<string, SteamAppStats> Load(bool forceLocalRefresh, bool forceOnlineRefresh)
+	{
 		string settingsKey = BuildSettingsKey();
 		lock (_cacheLock)
 		{
-			if (_cachedStats != null && DateTime.UtcNow < _cacheExpiresUtc && string.Equals(settingsKey, _cachedSettingsKey, StringComparison.Ordinal))
+			if (!forceLocalRefresh && !forceOnlineRefresh && _cachedStats != null && DateTime.UtcNow < _cacheExpiresUtc && string.Equals(settingsKey, _cachedSettingsKey, StringComparison.Ordinal))
 			{
 				return Clone(_cachedStats);
 			}
@@ -62,7 +71,7 @@ public class SteamDataProvider
 			string steamId = GetSteamId64();
 			if (!string.IsNullOrEmpty(steamApiKey) && !string.IsNullOrEmpty(steamId))
 			{
-				Merge(dictionary, LoadOnline(steamApiKey, steamId));
+				Merge(dictionary, GetOnlineStats(steamApiKey, steamId, settingsKey, forceOnlineRefresh));
 			}
 		}
 		lock (_cacheLock)
@@ -71,6 +80,24 @@ public class SteamDataProvider
 			_cachedSettingsKey = settingsKey;
 			_cacheExpiresUtc = DateTime.UtcNow.AddSeconds(_settings.EnableOnlineSteamSync ? 300.0 : 30.0);
 			return Clone(dictionary);
+		}
+	}
+
+	private Dictionary<string, SteamAppStats> GetOnlineStats(string steamApiKey, string steamId, string settingsKey, bool forceRefresh)
+	{
+		lock (_cacheLock)
+		{
+			if (!forceRefresh && _cachedOnlineStats != null && DateTime.UtcNow < _onlineCacheExpiresUtc && string.Equals(settingsKey, _cachedSettingsKey, StringComparison.Ordinal))
+			{
+				return Clone(_cachedOnlineStats);
+			}
+		}
+		Dictionary<string, SteamAppStats> loaded = LoadOnline(steamApiKey, steamId);
+		lock (_cacheLock)
+		{
+			_cachedOnlineStats = Clone(loaded);
+			_onlineCacheExpiresUtc = DateTime.UtcNow.AddMinutes(5.0);
+			return Clone(loaded);
 		}
 	}
 

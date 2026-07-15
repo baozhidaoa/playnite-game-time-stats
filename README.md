@@ -1,22 +1,36 @@
 # Game Time Statistics / 游戏时间统计
 
-Game Time Statistics is a Playnite generic plugin that shows playtime trends, daily activity, hourly habits, category distribution, and recent/top games in a standalone statistics window.
+Game Time Statistics is a Playnite generic plugin for understanding how you spend time in your game library. It opens a standalone statistics dashboard with playtime trends, daily activity, hourly habits, category preferences, and game rankings.
 
-Game Time Statistics 是一个 Playnite 通用插件，用独立统计窗口展示游戏时长趋势、每日活跃、时段分布、类型分布、最近游玩和最高时长游戏。
+游戏时间统计是一个 Playnite 通用插件，用于了解你在游戏库中的时间分配。插件会打开独立统计面板，展示游玩趋势、每日活跃情况、时段习惯、分类偏好和游戏排行。
 
 ## Features / 功能
 
-- Standalone Playnite WebView window; no custom theme slot is required.
-- Tracks Playnite game sessions and recovers interrupted sessions after restart.
-- Reads local Steam userdata when available and can optionally call Steam Web API.
-- Shows heatmap, bar, line, hourly, category, recent-games, and top-games views.
-- Stores runtime data in Playnite's plugin user data folder, so updates do not overwrite user history.
+- **Standalone dashboard**: Open the statistics window from Playnite's top panel without requiring a custom theme slot.
+- **Session tracking**: Record Playnite game sessions and recover sessions that were interrupted by a restart or unexpected exit.
+- **Multiple time ranges**: Review data by week, month, year, or all time.
+- **Several visualizations**: Switch between heatmap, bar chart, and line chart views for play trends.
+- **Play habit analysis**: See daily averages, hourly distribution, current streak, and category preferences.
+- **Game lists**: Browse recently played games, games played most, and highly rated favorites.
+- **Steam enrichment**: Read local Steam userdata when available and optionally import additional data through the Steam Web API.
+- **Transparent data sources**: Distinguish exact Playnite sessions, recovered sessions, Steam deltas, and historical estimates in the dashboard.
+- **Local-first storage**: Keep statistics and settings in Playnite's plugin user data directory.
+
+- **独立统计面板**：从 Playnite 顶部面板打开统计窗口，不需要占用自定义主题槽位。
+- **会话记录**：记录 Playnite 游戏会话，并恢复因重启或异常退出而中断的会话。
+- **多种时间范围**：按周、月、年或全部时间查看数据。
+- **多种图表视图**：在热力图、柱状图和折线图之间切换，查看游玩趋势。
+- **游玩习惯分析**：查看日均时长、时段分布、连续游玩天数和分类偏好。
+- **游戏列表**：浏览近期游玩的游戏、累计时长最高的游戏和高评分喜爱游戏。
+- **Steam 数据补充**：在可用时读取本机 Steam userdata，也可以选择通过 Steam Web API 导入额外数据。
+- **数据来源透明**：在面板中区分 Playnite 精确会话、恢复会话、Steam 差量和历史估算数据。
+- **本地优先存储**：统计数据和设置保存在 Playnite 的插件用户数据目录中。
 
 ## Screenshots / 截图
 
-The screenshots below use anonymized sample data and show the main dashboard, category preference radar, and recent games.
+The screenshots below use anonymized sample data.
 
-以下截图使用脱敏示例数据，展示主面板、分类偏好雷达图和近期游玩列表。
+以下截图使用脱敏示例数据。
 
 ![Overview dashboard](docs/screenshots/overview.png)
 
@@ -28,19 +42,25 @@ The screenshots below use anonymized sample data and show the main dashboard, ca
 
 ## Installation / 安装
 
-Install from Playnite's add-on browser after the add-on database pull request is merged, or install a `.pext` file from a GitHub Release.
+Install from Playnite's add-on browser after the add-on database pull request is merged, or download the `.pext` package from a GitHub Release and install it manually.
 
-在 Playnite 插件商城 PR 合并后，可直接从 Playnite 插件浏览器安装；也可以从 GitHub Release 下载 `.pext` 文件安装。
+插件数据库 PR 合并后，可以从 Playnite 插件浏览器安装；也可以从 GitHub Release 下载 `.pext` 安装包并手动安装。
+
+## Steam Data / Steam 数据
+
+Local Steam data is used when available. Online Steam sync is optional and disabled by default. To enable it, provide a Steam Web API key and SteamId64 in the plugin settings. If SteamId64 is left blank, the plugin attempts to infer it from local Steam userdata.
+
+插件会在可用时读取本机 Steam 数据。在线 Steam 同步为可选功能，默认关闭。启用后，请在插件设置中填写 Steam Web API Key 和 SteamId64。SteamId64 留空时，插件会尝试从本机 Steam userdata 自动推断。
 
 ## Privacy / 隐私说明
 
-The plugin stores `sessions.json`, `steam-snapshots.json`, generated web UI files, and plugin settings in Playnite's plugin user data directory. These files stay on your machine.
+The plugin does not include telemetry or third-party analytics. It stores `sessions.json`, `steam-snapshots.json`, generated web UI files, and plugin settings locally in Playnite's plugin user data directory.
 
-插件会在 Playnite 插件用户数据目录保存 `sessions.json`、`steam-snapshots.json`、生成后的 web UI 文件和插件设置。这些文件保留在本机。
+插件不包含遥测或第三方分析功能。插件会将 `sessions.json`、`steam-snapshots.json`、生成的 Web UI 文件和插件设置保存在 Playnite 的插件用户数据目录中。
 
-If online Steam sync is enabled, the plugin calls Steam Web API endpoints with the configured Steam API key and SteamId64. If the Steam API key is left empty, the plugin still tries to read local Steam configuration/userdata when available. No telemetry or third-party analytics are included.
+When online Steam sync is enabled, the plugin sends requests to Steam Web API endpoints using the configured API key and SteamId64. No Steam data is sent anywhere when online sync is disabled, apart from any local Steam data access needed to read available files.
 
-如果启用在线 Steam 同步，插件会使用配置的 Steam API Key 和 SteamId64 请求 Steam Web API。若未填写 Steam API Key，插件仍会在可用时读取本机 Steam 配置/userdata。插件不包含遥测或第三方统计。
+启用在线 Steam 同步后，插件会使用配置的 API Key 和 SteamId64 请求 Steam Web API。关闭在线同步时，除读取本机可用的 Steam 文件外，插件不会向外部发送 Steam 数据。
 
 ## Development / 开发
 
@@ -68,24 +88,22 @@ If `Toolbox.exe` is not on `PATH`, pass its full path:
 .\scripts\prepare-release.ps1 -GithubUser YOUR_GITHUB_USER -ToolboxPath "C:\Path\To\Toolbox.exe"
 ```
 
-Before publishing, make sure `extension.yaml`, `LICENSE`, `manifests\installer.yaml`, and `manifests\addon-database.yaml` use the correct GitHub user or organization.
+Before publishing, update the GitHub user or organization in `extension.yaml`, `LICENSE`, `manifests\installer.yaml`, and `manifests\addon-database.yaml`.
 
-正式发布前，请确认 `extension.yaml`、`LICENSE`、`manifests\installer.yaml` 和 `manifests\addon-database.yaml` 使用了正确的 GitHub 用户名或组织名。
+正式发布前，请更新 `extension.yaml`、`LICENSE`、`manifests\installer.yaml` 和 `manifests\addon-database.yaml` 中的 GitHub 用户名或组织名。
 
 ## Release Checklist / 发布检查
 
-- Update metadata and changelog for the target version.
+- Update metadata and `CHANGELOG.md` for the target version.
 - Run `dotnet build src\PlayniteGameStats.csproj -c Release`.
 - Run `.\scripts\prepare-release.ps1 -GithubUser baozhidaoa`.
-- Upload `dist\GameTimeStats_dc73bf2f-ffd7-40e0-acd4-08e2296a239e_1_0_0.pext` to GitHub Release `v1.0.0`.
-- Verify the installer manifest:
-  `Toolbox.exe verify installer manifests\installer.yaml`
-- Verify the add-on database manifest:
-  `Toolbox.exe verify addon manifests\addon-database.yaml`
-- Copy `manifests\addon-database.yaml` to `addons/generic/GameTimeStats_dc73bf2f-ffd7-40e0-acd4-08e2296a239e.yaml` in a fork of `JosefNemec/PlayniteAddonDatabase` and open a pull request.
+- Upload the generated `.pext` package to the matching GitHub Release.
+- Verify the installer and add-on database manifests with Playnite Toolbox.
+- Copy `manifests\addon-database.yaml` to `addons/generic/` in a fork of [PlayniteAddonDatabase](https://github.com/JosefNemec/PlayniteAddonDatabase) and open a pull request.
 
 ## Links / 链接
 
-- Playnite extension manifest docs: https://api.playnite.link/docs/tutorials/extensions/extensionsManifest.html
-- Playnite Toolbox docs: https://api.playnite.link/docs/tutorials/toolbox.html
-- Playnite Addon Database: https://github.com/JosefNemec/PlayniteAddonDatabase
+- [GitHub repository / GitHub 仓库](https://github.com/baozhidaoa/playnite-game-time-stats)
+- [Playnite extension manifest documentation / Playnite 扩展清单文档](https://api.playnite.link/docs/tutorials/extensions/extensionsManifest.html)
+- [Playnite Toolbox documentation / Playnite Toolbox 文档](https://api.playnite.link/docs/tutorials/toolbox.html)
+- [Playnite Add-on Database / Playnite 插件数据库](https://github.com/JosefNemec/PlayniteAddonDatabase)

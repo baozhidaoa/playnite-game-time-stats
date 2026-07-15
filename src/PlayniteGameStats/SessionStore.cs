@@ -8,7 +8,7 @@ namespace PlayniteGameStats;
 
 public class SessionStore
 {
-	private const int CurrentSchemaVersion = 2;
+	private const int CurrentSchemaVersion = 3;
 
 	private readonly string _filePath;
 
@@ -19,6 +19,8 @@ public class SessionStore
 	private DateTime _lastSave = DateTime.MinValue;
 
 	private bool _dirty;
+
+	private bool _attributionResetRequired;
 
 	public SessionStore(string pluginDataPath)
 	{
@@ -264,6 +266,16 @@ public class SessionStore
 		}
 	}
 
+	public bool ConsumeAttributionResetRequest()
+	{
+		lock (_lock)
+		{
+			bool result = _attributionResetRequired;
+			_attributionResetRequired = false;
+			return result;
+		}
+	}
+
 	private void Migrate()
 	{
 		if (_data.Sessions == null)
@@ -279,8 +291,10 @@ public class SessionStore
 			NormalizeRecord(session);
 		}
 		_data.Sessions = _data.Sessions.Where((SessionRecord s) => s.DurationSeconds >= 60 && !string.IsNullOrEmpty(s.GameId)).ToList();
-		if (_data.SchemaVersion != CurrentSchemaVersion)
+		if (_data.SchemaVersion < CurrentSchemaVersion)
 		{
+			_data.Sessions.RemoveAll((SessionRecord session) => session.Source == SessionSources.SteamDelta || session.Source == SessionSources.SteamEstimate || session.Source == SessionSources.PlayniteEstimate);
+			_attributionResetRequired = true;
 			_data.SchemaVersion = CurrentSchemaVersion;
 			_dirty = true;
 			Save();

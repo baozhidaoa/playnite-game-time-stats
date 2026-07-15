@@ -24,5 +24,5 @@ public class DailyStat
 
 	public string SourceBreakdown;
 
-	public List<string> GameNames;
+	public List<GameTimeDetail> GameDurations;
 }
