@@ -4,6 +4,7 @@ window.GameStats = (function () {
   var currentPeriod = "week";
   var currentChartType = "heatmap";
   var periodOffset = 0;
+  var lastDataVersion = -1;
 
   function init() {
     applyLocalization();
@@ -54,18 +55,19 @@ window.GameStats = (function () {
       });
     });
 
-    // Refresh button - reload the page with cache busting
+    // The Playnite SDK does not expose a web-message channel. Navigation is the
+    // explicit refresh request consumed by the host's loading callback.
     var refreshBtn = document.getElementById("refreshBtn");
     if (refreshBtn) {
       refreshBtn.addEventListener("click", function () {
         var url = window.location.href.split("?")[0];
-        window.location.href = url + "?t=" + new Date().getTime();
+        window.location.href = url + "?refresh=" + new Date().getTime();
       });
     }
 
     // The host injects the initial data after the local page finishes loading.
     if (window.__STATS_DATA__) {
-      loadData(window.__STATS_DATA__);
+      loadData(window.__STATS_DATA__, window.__GTS_DATA_VERSION__);
     } else {
       showEmpty(I18n.t("waitingData"));
     }
@@ -85,7 +87,9 @@ window.GameStats = (function () {
     if (categoryChart) categoryChart.setOption(emp);
   }
 
-  function loadData(jsonData) {
+  function loadData(jsonData, version) {
+    if (version !== undefined && version !== null && Number(version) < lastDataVersion) return;
+    if (version !== undefined && version !== null) lastDataVersion = Number(version);
     applyLocalization();
     fullData = jsonData;
     renderAll();
@@ -95,8 +99,7 @@ window.GameStats = (function () {
   function reload() {
     if (window.__STATS_DATA__) {
       applyLocalization();
-      fullData = window.__STATS_DATA__;
-      renderAll();
+      loadData(window.__STATS_DATA__, window.__GTS_DATA_VERSION__);
     }
   }
 
@@ -108,7 +111,6 @@ window.GameStats = (function () {
     renderHourlyChart();
     renderCategoryChart();
     renderGameLists();
-    UI.updateLegacyBanner(fullData);
     UI.updatePeriodLabel(getPeriodLabel());
   }
 
@@ -193,7 +195,7 @@ window.GameStats = (function () {
         RecoveredMinutes: 0,
         SteamDeltaMinutes: 0,
         SessionCount: 0,
-        GameNames: [],
+        GameDurations: [],
       });
     }
     if (!rows.length) return buckets;
@@ -213,7 +215,7 @@ window.GameStats = (function () {
       buckets[hour].RecoveredMinutes += h.RecoveredMinutes || 0;
       buckets[hour].SteamDeltaMinutes += h.SteamDeltaMinutes || 0;
       buckets[hour].SessionCount += h.SessionCount || 0;
-      mergeGameNames(buckets[hour].GameNames, h.GameNames);
+      mergeGameDurations(buckets[hour].GameDurations, h.GameDurations);
     });
 
     buckets.forEach(function (h) {
@@ -221,6 +223,9 @@ window.GameStats = (function () {
       h.ExactMinutes = round1(h.ExactMinutes / divisor);
       h.RecoveredMinutes = round1(h.RecoveredMinutes / divisor);
       h.SteamDeltaMinutes = round1(h.SteamDeltaMinutes / divisor);
+      h.GameDurations.forEach(function (detail) {
+        detail.Minutes = round1((detail.Minutes || 0) / divisor);
+      });
       h.AverageDays = divisor;
     });
     return buckets;
@@ -272,10 +277,16 @@ window.GameStats = (function () {
     return Math.round(v * 10) / 10;
   }
 
-  function mergeGameNames(target, names) {
-    if (!target || !names || !names.length) return;
-    names.forEach(function (name) {
-      if (name && target.indexOf(name) < 0) target.push(name);
+  function mergeGameDurations(target, details) {
+    if (!target || !details || !details.length) return;
+    details.forEach(function (detail) {
+      if (!detail || !detail.GameId) return;
+      var match = target.find(function (item) { return item.GameId === detail.GameId; });
+      if (!match) {
+        match = { GameId: detail.GameId, GameName: detail.GameName, Minutes: 0 };
+        target.push(match);
+      }
+      match.Minutes += detail.Minutes || 0;
     });
   }
 
@@ -382,6 +393,8 @@ window.GameStats = (function () {
       case "year":
         return String(today.getFullYear() + periodOffset);
       default:
+        var all = (fullData && fullData.DailyStats) || [];
+        if (all.length) return [all[0].Date, all[all.length - 1].Date];
         var s = new Date(today);
         s.setFullYear(s.getFullYear() - 1);
         return [fmtDate(s), fmtDate(today)];

@@ -46,7 +46,6 @@ var UI = (function () {
 
   function renderGameCard(g) {
     var coverHtml = renderCover(g, 120, 144);
-    var badge = renderBadge(g);
     return (
       '<div class="game-card">' +
       '<div class="game-cover">' +
@@ -57,7 +56,6 @@ var UI = (function () {
       escapeHtml(g.GameName) +
       '">' +
       escapeHtml(g.GameName) +
-      badge +
       "</div>" +
       '<div class="game-meta">' +
       formatCardMeta(g) +
@@ -84,20 +82,6 @@ var UI = (function () {
     return '<span class="fallback">&#127918;</span>';
   }
 
-  function renderBadge(g) {
-    if (!g) return "";
-    var raw = g.DataSource || (g.IsEstimated ? I18n.t("estimatedData") : "");
-    if (!raw) return "";
-    var title = g.EstimateReason || raw;
-    return (
-      '<span class="game-badge" title="' +
-      escapeHtml(title) +
-      '">' +
-      escapeHtml(raw) +
-      "</span>"
-    );
-  }
-
   function formatCardMeta(g) {
     var playText = formatMinutesAsHours(g && g.MinutesPlayed);
     var countText = I18n.format(
@@ -120,35 +104,6 @@ var UI = (function () {
     if (!raw) return null;
     if (raw.indexOf("http") === 0) return raw;
     return "file:///" + raw.replace(/\\/g, "/").replace(/ /g, "%20");
-  }
-
-  function updateLegacyBanner(data) {
-    var banner = document.getElementById("legacyBanner");
-    if (!banner) return;
-    var daily = data && data.DailyStats ? data.DailyStats : [];
-    var hasEstimated = daily.some(function (d) {
-      return d && d.EstimatedMinutes > 0;
-    });
-    var hasSteamDelta = daily.some(function (d) {
-      return d && d.SteamDeltaMinutes > 0;
-    });
-    var hasRecovered = daily.some(function (d) {
-      return d && d.RecoveredMinutes > 0;
-    });
-    if (hasEstimated || hasSteamDelta || hasRecovered) {
-      var parts = [];
-      if (hasSteamDelta) parts.push(I18n.t("legacySteamDelta"));
-      if (hasRecovered) parts.push(I18n.t("legacyRecovered"));
-      if (hasEstimated) parts.push(I18n.t("legacyEstimated"));
-      banner.textContent = I18n.format(
-        "legacyBanner",
-        "Includes {0} data. Hover charts to view source breakdown.",
-        parts.join(I18n.t("legacyJoin", ", ")),
-      );
-      banner.style.display = "block";
-    } else {
-      banner.style.display = "none";
-    }
   }
 
   function updateChartLegend(chartType) {
@@ -199,7 +154,6 @@ var UI = (function () {
     updatePeriodLabel: updatePeriodLabel,
     updateHourlyHint: updateHourlyHint,
     updateGameGrid: updateGameGrid,
-    updateLegacyBanner: updateLegacyBanner,
     updateChartLegend: updateChartLegend,
     setActiveTab: setActiveTab,
     formatHours: formatHours,

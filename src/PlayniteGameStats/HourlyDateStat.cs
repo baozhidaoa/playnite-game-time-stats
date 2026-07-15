@@ -18,5 +18,5 @@ public class HourlyDateStat
 
 	public int SessionCount;
 
-	public List<string> GameNames;
+	public List<GameTimeDetail> GameDurations;
 }

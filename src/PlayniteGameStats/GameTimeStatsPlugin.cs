@@ -18,6 +18,8 @@ public class GameTimeStatsPlugin : GenericPlugin
 
 	private StatsCalculator _statsCalculator;
 
+	private PlaytimeAttributionStore _attributionStore;
+
 	private WebViewManager _webViewManager;
 
 	private PluginSettings _settings;
@@ -39,7 +41,8 @@ public class GameTimeStatsPlugin : GenericPlugin
 		MigrateLegacyDataFiles(pluginDataPath);
 		_settings = LoadPluginSettings<PluginSettings>() ?? new PluginSettings();
 		_sessionStore = new SessionStore(pluginDataPath);
-		_statsCalculator = new StatsCalculator(PlayniteApi, _sessionStore, new SteamDataProvider(_settings), new SteamDeltaImporter(pluginDataPath, _sessionStore));
+		_attributionStore = new PlaytimeAttributionStore(pluginDataPath);
+		_statsCalculator = new StatsCalculator(PlayniteApi, _sessionStore, _attributionStore, new SteamDataProvider(_settings));
 		_webViewManager = new WebViewManager(PlayniteApi, _statsCalculator);
 	}
 
@@ -90,6 +93,12 @@ public class GameTimeStatsPlugin : GenericPlugin
 	public override void OnApplicationStarted(OnApplicationStartedEventArgs args)
 	{
 		_sessionStore.Load();
+		_attributionStore.Load();
+		if (_sessionStore.ConsumeAttributionResetRequest())
+		{
+			_attributionStore.Reset();
+			DeleteLegacySteamSnapshot();
+		}
 		int num = _sessionStore.RecoverAbandonedActiveSessions();
 		_statsCalculator.Invalidate();
 		StartHeartbeatTimer();
@@ -159,6 +168,21 @@ public class GameTimeStatsPlugin : GenericPlugin
 			catch
 			{
 			}
+		}
+	}
+
+	private void DeleteLegacySteamSnapshot()
+	{
+		try
+		{
+			string snapshot = Path.Combine(GetPluginUserDataPath(), "steam-snapshots.json");
+			if (File.Exists(snapshot))
+			{
+				File.Delete(snapshot);
+			}
+		}
+		catch
+		{
 		}
 	}
 

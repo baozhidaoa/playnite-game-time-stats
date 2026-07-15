@@ -5,7 +5,7 @@ namespace PlayniteGameStats;
 
 public class SessionFile
 {
-	public int SchemaVersion = 2;
+	public int SchemaVersion = 3;
 
 	public List<SessionRecord> Sessions = new List<SessionRecord>();
 

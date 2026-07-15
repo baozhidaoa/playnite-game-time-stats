@@ -36,17 +36,15 @@ var Charts = (function () {
       .replace(/'/g, '&#39;');
   }
 
-  function formatGameNames(names) {
-    if (!names || !names.length) return '';
-    return names
-      .filter(function (name) { return name; })
-      .map(escapeHtml)
-      .join(' / ');
-  }
-
-  function gameNamesLine(names) {
-    var text = formatGameNames(names);
-    return text ? '<br/><span style="color:#999">' + text + '</span>' : '';
+  function gameMinutesLine(details) {
+    if (!details || !details.length) return '';
+    return '<br/><span style="color:#999">' + details
+      .filter(function (detail) { return detail && detail.GameName; })
+      .sort(function (a, b) { return (b.Minutes || 0) - (a.Minutes || 0); })
+      .map(function (detail) {
+        return escapeHtml(detail.GameName) + ' ' + formatM(detail.Minutes || 0);
+      })
+      .join('<br/>') + '</span>';
   }
 
   // ── Heatmap ──
@@ -92,7 +90,7 @@ var Charts = (function () {
           return [pos[0] + 12, pos[1] + 12];
         },
         formatter: function (p) {
-          var games = p.value && p.value[2] ? gameNamesLine(p.value[2]) : '';
+          var games = p.value && p.value[2] ? gameMinutesLine(p.value[2]) : '';
           return p.value && p.value[0]
             ? '<b>' + p.value[0] + '</b><br/>' + formatM(p.value[1]) + games
             : '';
@@ -163,7 +161,7 @@ var Charts = (function () {
     dailyData.forEach(function (d) {
       byDate[d.Date] = {
         value: d.TotalMinutes,
-        gameNames: d.GameNames || []
+        gameDurations: d.GameDurations || []
       };
     });
 
@@ -180,7 +178,7 @@ var Charts = (function () {
     for (var d = start; d <= end; d.setDate(d.getDate() + 1)) {
       var key = formatDate(d);
       var item = byDate[key] || {};
-      data.push([key, item.value || 0, item.gameNames || []]);
+      data.push([key, item.value || 0, item.gameDurations || []]);
     }
     return data;
   }
@@ -209,7 +207,7 @@ var Charts = (function () {
   function createBarOption(dailyData, showYear) {
     if (!dailyData.length) return emptyChart();
     var rawDates = dailyData.map(function (d) { return d.Date; });
-    var gameNames = dailyData.map(function (d) { return d.GameNames || []; });
+    var gameDurations = dailyData.map(function (d) { return d.GameDurations || []; });
     var dates = dailyData.map(function (d) {
       var parts = d.Date.split('-');
       return showYear ? parts[0].slice(2) + '/' + parts[1] : parts[1] + '/' + parts[2];
@@ -222,7 +220,7 @@ var Charts = (function () {
         trigger: 'axis',
         formatter: function (params) {
           var idx = params[0].dataIndex;
-          return '<b>' + rawDates[idx] + '</b><br/>' + formatM(params[0].value) + gameNamesLine(gameNames[idx]);
+          return '<b>' + rawDates[idx] + '</b><br/>' + formatM(params[0].value) + gameMinutesLine(gameDurations[idx]);
         }
       }),
       xAxis: {
@@ -273,7 +271,7 @@ var Charts = (function () {
   function createLineOption(dailyData, showYear) {
     if (!dailyData.length) return emptyChart();
     var rawDates = dailyData.map(function (d) { return d.Date; });
-    var gameNames = dailyData.map(function (d) { return d.GameNames || []; });
+    var gameDurations = dailyData.map(function (d) { return d.GameDurations || []; });
     var dates = dailyData.map(function (d) {
       var p = d.Date.split('-');
       return showYear ? p[0].slice(2) + '/' + p[1] : p[1] + '/' + p[2];
@@ -287,7 +285,7 @@ var Charts = (function () {
         trigger: 'axis',
         formatter: function (params) {
           var idx = params[0].dataIndex;
-          return '<b>' + rawDates[idx] + '</b><br/>' + formatM(params[0].value) + gameNamesLine(gameNames[idx]);
+          return '<b>' + rawDates[idx] + '</b><br/>' + formatM(params[0].value) + gameMinutesLine(gameDurations[idx]);
         }
       }),
       xAxis: {
@@ -333,7 +331,7 @@ var Charts = (function () {
     if (!hourlyStats || !hourlyStats.length) return emptyChart();
     var hours = I18n.list('hourLabels', ['0:00','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23']);
     var values = hourlyStats.map(function (h) { return h.TotalMinutes; });
-    var gameNames = hourlyStats.map(function (h) { return h.GameNames || []; });
+    var gameDurations = hourlyStats.map(function (h) { return h.GameDurations || []; });
 
     return {
       grid: { left: 46, right: 18, top: 18, bottom: 32 },
@@ -342,7 +340,7 @@ var Charts = (function () {
         axisPointer: { type: 'line', lineStyle: { color: 'rgba(155,233,168,0.35)', width: 1 } },
         formatter: function (p) {
           var idx = p[0].dataIndex;
-          return '<b>' + hours[idx] + '</b><br/>' + I18n.t('daily', 'Daily') + ' ' + formatM(p[0].value) + gameNamesLine(gameNames[idx]);
+          return '<b>' + hours[idx] + '</b><br/>' + I18n.t('daily', 'Daily') + ' ' + formatM(p[0].value) + gameMinutesLine(gameDurations[idx]);
         }
       }),
       xAxis: {
