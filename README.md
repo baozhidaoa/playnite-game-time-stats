@@ -25,7 +25,23 @@ Game Time Statistics is a Playnite generic plugin for understanding how you spen
 - **Steam 数据补充**：在可用时读取本机 Steam userdata，也可以选择通过 Steam Web API 导入额外数据。
 - **数据来源透明**：在面板中区分 Playnite 精确会话、恢复会话、Steam 差量和历史估算数据。
 - **本地优先存储**：统计数据和设置保存在 Playnite 的插件用户数据目录中。
+**Note:**
 
+1. Historical data will be estimated based on data from Playnite and Steam, and then incorporated into the charts. (Extrapolating backwards from the last run time, with uneven time distribution — please understand that the estimation won't be perfectly precise.) (To connect Steam data, you need to set the Steam ID and API in this Playnite plugin.)
+
+2. If you forget to launch via Playnite, you can sync the Steam playtime in Playnite after finishing a game, then click the plugin's update button to update and record the playtime. The logic is: based on the game's last run time on Steam, the time difference is attributed to that last run time. So, as long as you update before the next play session, you'll get an accurate record.
+
+3. There are 5 types of charts: Heatmap, Bar Chart, Line Chart, Radar Chart, and Time Distribution Chart.
+
+4. There are 3 types of leaderboards: Recently Played, Total Playtime Ranking, and Most Favorite Games (ranked by rating). Each leaderboard displays a maximum of 6 entries.
+
+5. The play count recorded on game cards is only tracked when the game is launched through Playnite.
+**注意：**
+1、以前的数据会根据playnite和steam的数据进行推算，而兼容到图表中。（最后运行时间往前推，时长不均匀分布，推算做不到太精确，见谅）（要连接 steam 数据的话要在 playnite 的这个插件中设置 steamid 和 api）
+2、如果忘了用 playnite 启动，可以玩完游戏后同步一下 playnite 的 steam 时长，然后点击插件的更新按钮即可更新并记录时长。逻辑是根据 steam 游戏的最后运行时间，将差异小时归到最后运行时间，所以在下一次游玩前更新一下即可获得准确的记录。
+3、图表有5种，热力图、柱状图、折线图、雷达图、时段分布图。
+4、有3种榜单，最近游玩、总时长排行、最喜爱游戏（根据评分来排的），每个榜单最多显示6个。
+5、游戏卡片中次数的记录需要用 playnite 启动游戏才记录。
 ## Screenshots / 截图
 
 The screenshots below use anonymized sample data.
