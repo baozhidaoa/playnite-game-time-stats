@@ -25,6 +25,7 @@ Game Time Statistics is a Playnite generic plugin for understanding how you spen
 - **Steam 数据补充**：在可用时读取本机 Steam userdata，也可以选择通过 Steam Web API 导入额外数据。
 - **数据来源透明**：在面板中区分 Playnite 精确会话、恢复会话、Steam 差量和历史估算数据。
 - **本地优先存储**：统计数据和设置保存在 Playnite 的插件用户数据目录中。
+  
 **Note:**
 
 1. Historical data will be estimated based on data from Playnite and Steam, and then incorporated into the charts. (Extrapolating backwards from the last run time, with uneven time distribution — please understand that the estimation won't be perfectly precise.) (To connect Steam data, you need to set the Steam ID and API in this Playnite plugin.)
